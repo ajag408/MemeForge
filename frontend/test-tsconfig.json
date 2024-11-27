@@ -1,0 +1,15 @@
+{
+    "extends": "./tsconfig.json",
+    "compilerOptions": {
+      "module": "CommonJS",
+      "moduleResolution": "node",
+      "esModuleInterop": true,
+      "allowJs": true,
+      "resolveJsonModule": true
+    },
+    "ts-node": {
+      "transpileOnly": true,
+      "files": true
+    },
+    "include": ["utils/**/*"]
+  }
