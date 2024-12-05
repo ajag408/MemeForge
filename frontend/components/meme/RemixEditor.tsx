@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from 'react';
 import type { Meme } from '@/types/meme';
 import { uploadToIPFS } from '@/utils/ipfs';
-import { useMemeForgeContract } from '@/hooks/useContract';
+import { useContract } from '@/contexts/ContractContext';
 
 interface RemixEditorProps {
   originalMeme: Meme;
@@ -17,7 +17,7 @@ export default function RemixEditor({ originalMeme, onClose }: RemixEditorProps)
   const [description, setDescription] = useState('');
   const [tags, setTags] = useState<string[]>([]);
   const [tagInput, setTagInput] = useState('');
-  const { contract } = useMemeForgeContract();
+  const { contract, signer } = useContract();
 
   useEffect(() => {
     const loadImage = async () => {
@@ -53,7 +53,7 @@ export default function RemixEditor({ originalMeme, onClose }: RemixEditorProps)
   };
 
   const handleSave = async () => {
-    if (!contract || !canvasRef.current) return;
+    if (!contract || !signer || !canvasRef.current) return;
 
     setIsLoading(true);
     try {
@@ -62,7 +62,8 @@ export default function RemixEditor({ originalMeme, onClose }: RemixEditorProps)
         canvasRef.current!.toBlob((blob) => resolve(blob as Blob))
       );
       
-      const file = new File([blob], 'remix.png', { type: 'image/png' });
+      const uniqueFilename = `remix-${Date.now()}.png`;
+      const file = new File([blob], uniqueFilename, { type: 'image/png' });
       const imageHash = await uploadToIPFS(file);
       
       // Create and upload metadata
@@ -70,15 +71,15 @@ export default function RemixEditor({ originalMeme, onClose }: RemixEditorProps)
         title: title || 'Untitled Remix',
         description: description || 'A remixed meme',
         tags: tags,
-        image: `ipfs://${imageHash}`,
+        image: imageHash.startsWith('ipfs://') ? imageHash : `ipfs://${imageHash}`, // Ensure correct prefix
       };
       
       const metadataBlob = new Blob([JSON.stringify(metadata)], { type: 'application/json' });
-      const metadataFile = new File([metadataBlob], 'metadata.json', { type: 'application/json' });
+      const metadataFile = new File([metadataBlob], 'metadata.json');
       const metadataHash = await uploadToIPFS(metadataFile);
       
       // Create remix on blockchain
-      const tx = await contract.remixMeme(originalMeme.tokenId, `ipfs://${metadataHash}`);
+      const tx = await contract.remixMeme(originalMeme.tokenId, metadataHash);
       await tx.wait();
       
       onClose();

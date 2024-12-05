@@ -1,22 +1,27 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { useMemeForgeContract } from '@/hooks/useContract';
+import { useContract } from '@/contexts/ContractContext';
 import type { Meme } from '@/types/meme';
 import MemeDisplay from './MemeDisplay';
+import RemixEditor from './RemixEditor';
 
 export default function VotingDashboard() {
   const [memes, setMemes] = useState<Meme[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const { contract } = useMemeForgeContract();
+  const [selectedMeme, setSelectedMeme] = useState<Meme | null>(null);
+  const { contract, signer } = useContract();
 
   useEffect(() => {
+    console.log("useEffect triggered with contract:", contract);
+
     const fetchMemes = async () => {
+
       if (!contract) return;
 
       try {
         // Get the next token ID (represents total memes created)
-        const nextTokenId = 1;
+        const nextTokenId = 5;
         // const nextTokenId = await contract.getNextTokenId();
 
         const memesData = [];
@@ -52,13 +57,19 @@ export default function VotingDashboard() {
     fetchMemes();
   }, [contract]);
 
+  const handleRemix = (meme: Meme) => {
+    setSelectedMeme(meme);
+  };
   const handleVote = async (memeId: number) => {
     if (!contract) return;
+    if (!signer) {
+      alert("Please connect your wallet to vote");
+      return;
+    }
 
     try {
       const tx = await contract.voteMeme(memeId);
       await tx.wait();
-      // Refresh memes after voting
       const updatedMeme = await contract.getMemeData(memeId);
       setMemes(memes.map(meme => 
         meme.tokenId === memeId 
@@ -81,7 +92,7 @@ export default function VotingDashboard() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {memes.map((meme) => (
           <div key={meme.tokenId} className="space-y-2">
-            <MemeDisplay meme={meme} />
+            <MemeDisplay meme={meme} onRemix={handleRemix} />
             <button
               onClick={() => handleVote(meme.tokenId)}
               className="w-full bg-blue-500 text-white px-4 py-2 rounded"
@@ -91,6 +102,12 @@ export default function VotingDashboard() {
           </div>
         ))}
       </div>
+      {selectedMeme && (
+        <RemixEditor 
+          originalMeme={selectedMeme} 
+          onClose={() => setSelectedMeme(null)} 
+        />
+      )}
     </div>
   );
 }

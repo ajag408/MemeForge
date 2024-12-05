@@ -3,7 +3,8 @@
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import type { Meme } from '@/types/meme';
-import { useMemeForgeContract } from '@/hooks/useContract';
+import { useContract } from '@/contexts/ContractContext';
+
 
 interface MemeDisplayProps {
   meme: Meme;
@@ -22,17 +23,28 @@ export default function MemeDisplay({ meme, onRemix }: MemeDisplayProps) {
   const [imageUrl, setImageUrl] = useState<string>('');
   const [metadata, setMetadata] = useState<MemeMetadata | null>(null);
   const [likes, setLikes] = useState(meme.likes);
-  const { contract } = useMemeForgeContract();
+  const { contract, signer } = useContract();
+  // console.log("MemeDisplay re-rendered with contract:", contract, "signer:", signer);
 
   useEffect(() => {
     const fetchMetadata = async () => {
       try {
-        const response = await fetch(meme.uri.replace('ipfs://', 'https://ipfs.io/ipfs/'));
+        // Remove any double ipfs:// prefixes and format URL correctly
+        
+        const cleanUri = meme.uri.replace('ipfs://', '');
+        const response = await fetch(`https://ipfs.io/ipfs/${cleanUri}`);
+        
         const data: MemeMetadata = await response.json();
+
+        
         setMetadata(data);
-        setImageUrl(data.image.replace('ipfs://', 'https://ipfs.io/ipfs/'));
+        
+        // Clean the image URL the same way
+        const cleanImageUrl = data.image.replace('ipfs://', '');
+        setImageUrl(`https://ipfs.io/ipfs/${cleanImageUrl}`);
       } catch (error) {
         console.error('Error fetching metadata:', error);
+        console.log(meme.tokenId)
       }
     };
 
@@ -41,7 +53,10 @@ export default function MemeDisplay({ meme, onRemix }: MemeDisplayProps) {
 
   const handleLike = async () => {
     if (!contract) return;
-    
+    if (!signer) {
+      alert("Please connect your wallet to like memes");
+      return;
+    }
     setIsLiking(true);
     try {
       const tx = await contract.likeMeme(meme.tokenId);
@@ -51,6 +66,16 @@ export default function MemeDisplay({ meme, onRemix }: MemeDisplayProps) {
       console.error('Error liking meme:', error);
     } finally {
       setIsLiking(false);
+    }
+  };
+
+  const handleRemix = () => {
+    if (!signer) {
+      alert("Please connect your wallet remix");
+      return;
+    }
+    if (onRemix) {
+      onRemix(meme);
     }
   };
 
@@ -96,7 +121,7 @@ export default function MemeDisplay({ meme, onRemix }: MemeDisplayProps) {
           </div>
           
           <button
-            onClick={() => onRemix?.(meme)}
+            onClick={handleRemix}
             className="bg-gradient-to-r from-purple-500 to-pink-500 text-white px-4 py-2 rounded-lg hover:from-purple-600 hover:to-pink-600 transition-all"
           >
             Remix

@@ -3,7 +3,7 @@
 import { useState, useCallback } from 'react';
 import { uploadToIPFS } from '@/utils/ipfs';
 import Image from 'next/image';
-import { useMemeForgeContract } from '@/hooks/useContract';
+import { useContract } from '@/contexts/ContractContext';
 
 export default function MemeUpload() {
   const [file, setFile] = useState<File | null>(null);
@@ -14,7 +14,7 @@ export default function MemeUpload() {
     tags: ''
   });
   const [isUploading, setIsUploading] = useState(false);
-  const { contract, isWrongNetwork, switchNetwork } = useMemeForgeContract();
+  const { contract, isWrongNetwork, switchNetwork, signer } = useContract();
 
   const onDrop = useCallback((e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
@@ -28,7 +28,10 @@ export default function MemeUpload() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!file || !contract) return;
-
+    if (!signer) {
+      alert("Please connect your wallet to upload memes");
+      return;
+    }
     try {
       setIsUploading(true);
       // Upload image to IPFS
