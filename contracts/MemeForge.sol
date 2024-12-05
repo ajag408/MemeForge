@@ -49,10 +49,7 @@ contract MemeForge is ERC721, ERC721URIStorage, ERC2981, Ownable, ReentrancyGuar
     event MemeRemixed(uint256 indexed originalTokenId, uint256 indexed newTokenId, address remixer, string uri);
     event MemeVoted(uint256 indexed tokenId, address voter);
 
-    constructor(address _keyNFT, address _eyeNFT) ERC721("MemeForge", "MEME") Ownable(msg.sender) {
-        keyNFT = IERC721(_keyNFT);
-        eyeNFT = IERC721(_eyeNFT);
-    }
+    constructor() ERC721("MemeForge", "MEME") Ownable(msg.sender) {}
 
     // NFT Holder checks
     function isKeyHolder(address user) public view returns (bool) {
@@ -205,6 +202,21 @@ contract MemeForge is ERC721, ERC721URIStorage, ERC2981, Ownable, ReentrancyGuar
     {
         require(ownerOf(tokenId) != address(0), "Token does not exist");
         return super.royaltyInfo(tokenId, salePrice);
+    }
+
+    // Add setter functions for NFT addresses
+    function setKeyNFT(address _keyNFT) public onlyOwner {
+        require(_keyNFT != address(0), "Invalid address");
+        keyNFT = IERC721(_keyNFT);
+    }
+
+    function setEyeNFT(address _eyeNFT) public onlyOwner {
+        require(_eyeNFT != address(0), "Invalid address");
+        eyeNFT = IERC721(_eyeNFT);
+    }
+
+    function getNextTokenId() public view returns (uint256) {
+        return _nextTokenId;
     }
 
     // Required overrides

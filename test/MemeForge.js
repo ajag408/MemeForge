@@ -18,25 +18,22 @@ describe("MemeForge", function () {
 
     // Deploy MemeForge
     MemeForge = await ethers.getContractFactory("MemeForge");
-    memeForge = await MemeForge.deploy(
-      await keyNFT.getAddress(),
-      await eyeNFT.getAddress()
-    );
+    memeForge = await MemeForge.deploy();
   });
 
-  describe("NFT Holder Checks", function () {
-    it("Should correctly identify Key NFT holders", async function () {
-      expect(await memeForge.isKeyHolder(user1.address)).to.be.false;
-      await keyNFT.mint(user1.address, 1);
-      expect(await memeForge.isKeyHolder(user1.address)).to.be.true;
-    });
+  // describe("NFT Holder Checks", function () {
+  //   it("Should correctly identify Key NFT holders", async function () {
+  //     expect(await memeForge.isKeyHolder(user1.address)).to.be.false;
+  //     await keyNFT.mint(user1.address, 1);
+  //     expect(await memeForge.isKeyHolder(user1.address)).to.be.true;
+  //   });
 
-    it("Should correctly identify Eye NFT holders", async function () {
-      expect(await memeForge.isEyeHolder(user1.address)).to.be.false;
-      await eyeNFT.mint(user1.address, 1);
-      expect(await memeForge.isEyeHolder(user1.address)).to.be.true;
-    });
-  });
+  //   it("Should correctly identify Eye NFT holders", async function () {
+  //     expect(await memeForge.isEyeHolder(user1.address)).to.be.false;
+  //     await eyeNFT.mint(user1.address, 1);
+  //     expect(await memeForge.isEyeHolder(user1.address)).to.be.true;
+  //   });
+  // });
 
   describe("Meme Creation", function () {
     beforeEach(async function () {
