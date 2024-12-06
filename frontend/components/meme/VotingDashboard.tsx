@@ -10,17 +10,15 @@ interface VotingStats {
   likes: number;
   remixes: number;
   votes: number;
-  creator: string;
 }
 
 export default function VotingDashboard() {
-  const { contract, signer } = useContract();
   const [memes, setMemes] = useState<Meme[]>([]);
-  const [selectedMeme, setSelectedMeme] = useState<Meme | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [votingStats, setVotingStats] = useState<Record<number, VotingStats>>({});
   const [userCanVote, setUserCanVote] = useState(false);
-  const [rewards, setRewards] = useState<any[]>([]);
+  const [votingStats, setVotingStats] = useState<Record<number, VotingStats>>({});
+  const [selectedMeme, setSelectedMeme] = useState<Meme | null>(null);
+  const { contract, signer } = useContract();
 
   useEffect(() => {
     const checkVotingEligibility = async () => {
@@ -47,7 +45,6 @@ export default function VotingDashboard() {
                   likes: meme.likes.toNumber(),
                   remixes: meme.remixes.toNumber(),
                   votes: meme.votes.toNumber(),
-                  creator: meme.creator
                 };
                 setVotingStats(prev => ({ ...prev, [i]: stats }));
                 return {
@@ -135,6 +132,10 @@ export default function VotingDashboard() {
     }
   };
 
+  const handleRemix = (meme: Meme) => {
+    setSelectedMeme(meme);
+  };
+
   if (isLoading) {
     return <div className="text-center py-8">Loading voting dashboard...</div>;
   }
@@ -153,37 +154,25 @@ export default function VotingDashboard() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {memes.map((meme) => (
             <div key={meme.tokenId} className="space-y-2">
-              <MemeDisplay meme={meme} />
-              <div className="bg-gray-800 p-4 rounded-lg">
-                <div className="flex justify-between items-center mb-2">
-                  <span className="text-gray-400">Creator:</span>
-                  <span className="text-purple-400">
-                    {meme.creator.slice(0, 6)}...{meme.creator.slice(-4)}
-                  </span>
-                </div>
-                <button
-                  onClick={() => handleVote(meme.tokenId)}
-                  disabled={!userCanVote}
-                  className="w-full bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 disabled:opacity-50"
-                >
-                  Vote ({votingStats[meme.tokenId]?.votes || 0})
-                </button>
-              </div>
+              <MemeDisplay meme={meme} onRemix={handleRemix} />
+              <button
+                onClick={() => handleVote(meme.tokenId)}
+                disabled={!userCanVote}
+                className="w-full bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 disabled:opacity-50"
+              >
+                Vote ({votingStats[meme.tokenId]?.votes || 0})
+              </button>
             </div>
           ))}
         </div>
       </div>
 
-      {/* Monthly Rewards Section */}
-      <div className="bg-gradient-to-br from-gray-900 to-gray-800 p-6 rounded-xl">
-        <h2 className="text-2xl font-bold text-white mb-4">Monthly Rewards</h2>
-        <div className="space-y-4">
-          <div className="bg-green-500/20 text-green-300 p-4 rounded-lg">
-            🏆 Top voted memes this month will receive exclusive NFTs and tokens!
-          </div>
-          {/* Add rewards display logic here */}
-        </div>
-      </div>
+      {selectedMeme && (
+        <RemixEditor 
+          originalMeme={selectedMeme} 
+          onClose={() => setSelectedMeme(null)} 
+        />
+      )}
     </div>
   );
 }
