@@ -142,6 +142,28 @@ export default function VotingDashboard() {
 
   return (
     <div className="space-y-8">
+      {/* Monthly Rewards Section */}
+      <div className="bg-gradient-to-br from-gray-900 to-gray-800 p-6 rounded-xl">
+        <h2 className="text-2xl font-bold text-white mb-4">Monthly Rewards</h2>
+        <div className="space-y-4">
+          <div className="bg-green-500/20 text-green-300 p-4 rounded-lg">
+            🏆 Top voted memes this month will receive exclusive NFTs and tokens!
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="bg-purple-500/20 text-purple-300 p-4 rounded-lg">
+              🥇 1st Place: 1000 MEME + Rare NFT
+            </div>
+            <div className="bg-blue-500/20 text-blue-300 p-4 rounded-lg">
+              🥈 2nd Place: 500 MEME + NFT
+            </div>
+            <div className="bg-indigo-500/20 text-indigo-300 p-4 rounded-lg">
+              🥉 3rd Place: 250 MEME + NFT
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Existing Memes Grid */}
       <div className="bg-gradient-to-br from-gray-900 to-gray-800 p-6 rounded-xl">
         <h2 className="text-2xl font-bold text-white mb-4">Top Memes</h2>
         
