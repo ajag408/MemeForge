@@ -1,77 +1,26 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import Image from 'next/image';
-import type { Meme } from '@/types/meme';
+import Link from 'next/link';
+import type { Meme, MemeMetadata } from '@/types/meme';
 import { useContract } from '@/contexts/ContractContext';
-
 
 interface MemeDisplayProps {
   meme: Meme;
   onRemix?: (meme: Meme) => void;
+  showFullSize?: boolean;
 }
 
-interface MemeMetadata {
-  title: string;
-  description: string;
-  tags: string[];
-  image: string;
-}
-
-export default function MemeDisplay({ meme, onRemix }: MemeDisplayProps) {
+export default function MemeDisplay({ meme, onRemix, showFullSize }: MemeDisplayProps) {
   const [isLiking, setIsLiking] = useState(false);
-  const [imageUrl, setImageUrl] = useState<string>('');
-  const [metadata, setMetadata] = useState<MemeMetadata | null>(null);
-  const [likes, setLikes] = useState(meme.likes);
   const { contract, signer } = useContract();
-  // console.log("MemeDisplay re-rendered with contract:", contract, "signer:", signer);
-
-  useEffect(() => {
-    const fetchMetadata = async () => {
-      try {
-        // Remove any double ipfs:// prefixes and format URL correctly
-        
-        const cleanUri = meme.uri.replace('ipfs://', '');
-        const response = await fetch(`https://ipfs.io/ipfs/${cleanUri}`);
-        
-        const data: MemeMetadata = await response.json();
-
-        
-        setMetadata(data);
-        
-        // Clean the image URL the same way
-        const cleanImageUrl = data.image.replace('ipfs://', '');
-        setImageUrl(`https://ipfs.io/ipfs/${cleanImageUrl}`);
-      } catch (error) {
-        console.error('Error fetching metadata:', error);
-        console.log(meme.tokenId)
-      }
-    };
-
-    fetchMetadata();
-  }, [meme.uri]);
-
-  const handleLike = async () => {
-    if (!contract) return;
-    if (!signer) {
-      alert("Please connect your wallet to like memes");
-      return;
-    }
-    setIsLiking(true);
-    try {
-      const tx = await contract.likeMeme(meme.tokenId);
-      await tx.wait();
-      setLikes(prev => prev + 1);
-    } catch (error) {
-      console.error('Error liking meme:', error);
-    } finally {
-      setIsLiking(false);
-    }
-  };
+  const [metadata, setMetadata] = useState<MemeMetadata | null>(null);
+  const [imageUrl, setImageUrl] = useState('');
 
   const handleRemix = () => {
     if (!signer) {
-      alert("Please connect your wallet remix");
+      alert("Please connect your wallet to remix");
       return;
     }
     if (onRemix) {
@@ -79,16 +28,56 @@ export default function MemeDisplay({ meme, onRemix }: MemeDisplayProps) {
     }
   };
 
+  const handleLike = async () => {
+    if (!contract ||!signer) {
+      alert("Please connect your wallet to like");
+      return;
+    }
+    
+      try {
+        setIsLiking(true);
+        const tx = await contract.likeMeme(meme.tokenId);
+        await tx.wait();
+        
+        // Update local like count
+        const updatedMeme = await contract.getMemeData(meme.tokenId);
+        meme.likes = updatedMeme.likes.toNumber();
+      } catch (error) {
+        console.error('Error liking meme:', error);
+      } finally {
+        setIsLiking(false);
+      }
+  };
+
+  // Fetch metadata and image URL
+  useEffect(() => {
+    const fetchMetadata = async () => {
+      try {
+        const response = await fetch(meme.uri.replace('ipfs://', 'https://ipfs.io/ipfs/'));
+        const metadataResponse = await response.json();
+        setMetadata(metadataResponse);
+        setImageUrl(metadataResponse.image.replace('ipfs://', 'https://ipfs.io/ipfs/'));
+      } catch (error) {
+        console.error('Error fetching metadata:', error);
+      }
+    };
+
+    fetchMetadata();
+  }, [meme.uri]);
+
   return (
     <div className="border rounded-lg overflow-hidden bg-gradient-to-br from-gray-900 to-gray-800 text-white shadow-xl">
-      <div className="relative aspect-square w-full bg-black/50">
+      <div className={`relative ${showFullSize ? 'w-full h-[600px]' : 'aspect-square w-full'} bg-black/50`}>
         {imageUrl && (
-          <Image
-            src={imageUrl}
-            alt={metadata?.title || "Meme"}
-            fill
-            className="object-contain"
-          />
+          <Link href={`/meme/${meme.tokenId}`}>
+            <Image
+              src={imageUrl}
+              alt={metadata?.title || "Meme"}
+              fill
+              className="object-contain"
+              priority={showFullSize}
+            />
+          </Link>
         )}
       </div>
       
@@ -114,7 +103,7 @@ export default function MemeDisplay({ meme, onRemix }: MemeDisplayProps) {
               disabled={isLiking}
               className="flex items-center gap-2 hover:text-pink-500 transition-colors"
             >
-              ❤️ {likes}
+              ❤️ {meme.likes}
             </button>
             <span className="text-blue-400">🔄 {meme.remixes}</span>
             <span className="text-green-400">🗳️ {meme.votes}</span>
