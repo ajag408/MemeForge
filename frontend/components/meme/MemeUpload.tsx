@@ -11,7 +11,11 @@ const MEME_TEMPLATES = [
   // Add more templates as needed
 ];
 
-export default function MemeUpload() {
+interface MemeUploadProps {
+  selectedImage: string | null;
+}
+
+export default function MemeUpload({ selectedImage }: MemeUploadProps) {
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string>('');
   const [metadata, setMetadata] = useState({
@@ -28,14 +32,20 @@ export default function MemeUpload() {
   const [isUploading, setIsUploading] = useState(false);
   const [showTemplates, setShowTemplates] = useState(false);
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [textOverlay, setTextOverlay] = useState({
-    topText: '',
-    bottomText: '',
-    fontSize: '400',
-    color: '#ffffff'
-  });
   
   const { contract, signer } = useContract();
+
+  useEffect(() => {
+    if (selectedImage) {
+      fetch(selectedImage)
+        .then(res => res.blob())
+        .then(blob => {
+          const file = new File([blob], 'ai-generated.png', { type: 'image/png' });
+          setFile(file);
+          setPreview(selectedImage);
+        });
+    }
+  }, [selectedImage]);
 
   const handleTemplateSelect = async (templateUrl: string) => {
     const response = await fetch(templateUrl);
@@ -139,12 +149,12 @@ export default function MemeUpload() {
           color: '#ffffff'
         }
       });
-      setTextOverlay({
-        topText: '',
-        bottomText: '',
-        fontSize: '40',
-        color: '#ffffff'
-      });
+      // setTextOverlay({
+      //   topText: '',
+      //   bottomText: '',
+      //   fontSize: '40',
+      //   color: '#ffffff'
+      // });
       
     } catch (error) {
       console.error('Error creating meme:', error);
