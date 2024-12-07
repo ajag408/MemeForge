@@ -53,7 +53,7 @@ export default function Home() {
               : 'bg-gray-800/50 text-gray-300 hover:bg-gray-700/50'
           }`}
         >
-          🎭 All
+          🎭 All Memes
         </button>
       </div>
 
