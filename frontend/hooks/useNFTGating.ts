@@ -46,5 +46,5 @@ export function useNFTGating() {
     checkNFTs();
   }, [signer]);
 
-  return { ...nftStatus, isLoading };
+  return { ...nftStatus, isLoading, signer };
 }

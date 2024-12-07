@@ -42,7 +42,13 @@ export default function MemeUpload({ selectedImage }: MemeUploadProps) {
         .then(blob => {
           const file = new File([blob], 'ai-generated.png', { type: 'image/png' });
           setFile(file);
-          setPreview(selectedImage);
+          // Create a URL with crossOrigin support
+          const img = document.createElement('img');
+          img.crossOrigin = "anonymous";
+          img.onload = () => {
+            setPreview(URL.createObjectURL(file));
+          };
+          img.src = selectedImage;
         });
     }
   }, [selectedImage]);
@@ -65,39 +71,45 @@ export default function MemeUpload({ selectedImage }: MemeUploadProps) {
     }
   }, []);
 
-  const updateCanvas = () => {
+  const drawImageOnCanvas = useCallback(() => {
     if (!canvasRef.current || !preview) return;
     const ctx = canvasRef.current.getContext('2d');
     if (!ctx) return;
-  
+
     const img = document.createElement('img');
+    img.crossOrigin = "anonymous";
+    
     img.onload = () => {
       canvasRef.current!.width = img.width;
       canvasRef.current!.height = img.height;
       ctx.drawImage(img, 0, 0);
       
+      // Configure text style
       ctx.font = `bold ${metadata.textOverlay.fontSize}px Impact`;
       ctx.fillStyle = metadata.textOverlay.color;
       ctx.strokeStyle = 'black';
       ctx.lineWidth = 3;
       ctx.textAlign = 'center';
       
+      // Draw top text
       if (metadata.textOverlay.topText) {
-        ctx.strokeText(metadata.textOverlay.topText, img.width/2, 200);
-        ctx.fillText(metadata.textOverlay.topText, img.width/2, 200);
+        ctx.strokeText(metadata.textOverlay.topText, img.width/2, parseInt(metadata.textOverlay.fontSize) + 20);
+        ctx.fillText(metadata.textOverlay.topText, img.width/2, parseInt(metadata.textOverlay.fontSize) + 20);
       }
       
+      // Draw bottom text
       if (metadata.textOverlay.bottomText) {
-        ctx.strokeText(metadata.textOverlay.bottomText, img.width/2, img.height - 30);
-        ctx.fillText(metadata.textOverlay.bottomText, img.width/2, img.height - 30);
+        ctx.strokeText(metadata.textOverlay.bottomText, img.width/2, img.height - 20);
+        ctx.fillText(metadata.textOverlay.bottomText, img.width/2, img.height - 20);
       }
     };
+    
     img.src = preview;
-  };
+  }, [preview, metadata.textOverlay]);
 
   useEffect(() => {
-    updateCanvas();
-  }, [preview, metadata.textOverlay]);
+    drawImageOnCanvas();
+  }, [drawImageOnCanvas]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -138,9 +150,9 @@ export default function MemeUpload({ selectedImage }: MemeUploadProps) {
       // Reset form
       setFile(null);
       setPreview('');
-      setMetadata({ 
-        title: '', 
-        description: '', 
+      setMetadata({
+        title: '',
+        description: '',
         tags: '',
         textOverlay: {
           topText: '',
@@ -149,15 +161,10 @@ export default function MemeUpload({ selectedImage }: MemeUploadProps) {
           color: '#ffffff'
         }
       });
-      // setTextOverlay({
-      //   topText: '',
-      //   bottomText: '',
-      //   fontSize: '40',
-      //   color: '#ffffff'
-      // });
       
     } catch (error) {
       console.error('Error creating meme:', error);
+      alert('Failed to create meme. Please try again.');
     } finally {
       setIsUploading(false);
     }
@@ -220,59 +227,60 @@ export default function MemeUpload({ selectedImage }: MemeUploadProps) {
               </div>
             </div>
           )}
-        {preview && (
-          <div className="space-y-4 bg-gray-800 p-4 rounded-lg">
-            <h3 className="text-white font-bold mb-4">Text Options</h3>
-            <input
-              type="text"
-              placeholder="Enter top text"
-              value={metadata.textOverlay.topText}
-              onChange={(e) => setMetadata({
-                ...metadata,
-                textOverlay: { ...metadata.textOverlay, topText: e.target.value }
-              })}
-              className="w-full p-2 border rounded bg-gray-700 text-white placeholder-gray-400"
-            />
-            <input
-              type="text"
-              placeholder="Enter bottom text"
-              value={metadata.textOverlay.bottomText}
-              onChange={(e) => setMetadata({
-                ...metadata,
-                textOverlay: { ...metadata.textOverlay, bottomText: e.target.value }
-              })}
-              className="w-full p-2 border rounded bg-gray-700 text-white placeholder-gray-400"
-            />
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-white text-sm mb-2">Font Size</label>
-                <input
-                  type="number"
-                  min="20"
-                  max="600"
-                  value={metadata.textOverlay.fontSize}
-                  onChange={(e) => setMetadata({
-                    ...metadata,
-                    textOverlay: { ...metadata.textOverlay, fontSize: e.target.value }
-                  })}
-                  className="w-full p-2 border rounded bg-gray-700 text-white"
-                />
-              </div>
-              <div>
-                <label className="block text-white text-sm mb-2">Text Color</label>
-                <input
-                  type="color"
-                  value={metadata.textOverlay.color}
-                  onChange={(e) => setMetadata({
-                    ...metadata,
-                    textOverlay: { ...metadata.textOverlay, color: e.target.value }
-                  })}
-                  className="w-full p-2 h-10 border rounded bg-gray-700"
-                />
+
+          {preview && (
+            <div className="space-y-4 bg-gray-800 p-4 rounded-lg">
+              <h3 className="text-white font-bold mb-4">Text Options</h3>
+              <input
+                type="text"
+                placeholder="Enter top text"
+                value={metadata.textOverlay.topText}
+                onChange={(e) => setMetadata({
+                  ...metadata,
+                  textOverlay: { ...metadata.textOverlay, topText: e.target.value }
+                })}
+                className="w-full p-2 border rounded bg-gray-700 text-white placeholder-gray-400"
+              />
+              <input
+                type="text"
+                placeholder="Enter bottom text"
+                value={metadata.textOverlay.bottomText}
+                onChange={(e) => setMetadata({
+                  ...metadata,
+                  textOverlay: { ...metadata.textOverlay, bottomText: e.target.value }
+                })}
+                className="w-full p-2 border rounded bg-gray-700 text-white placeholder-gray-400"
+              />
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-white text-sm mb-2">Font Size</label>
+                  <input
+                    type="number"
+                    min="20"
+                    max="600"
+                    value={metadata.textOverlay.fontSize}
+                    onChange={(e) => setMetadata({
+                      ...metadata,
+                      textOverlay: { ...metadata.textOverlay, fontSize: e.target.value }
+                    })}
+                    className="w-full p-2 border rounded bg-gray-700 text-white"
+                  />
+                </div>
+                <div>
+                  <label className="block text-white text-sm mb-2">Text Color</label>
+                  <input
+                    type="color"
+                    value={metadata.textOverlay.color}
+                    onChange={(e) => setMetadata({
+                      ...metadata,
+                      textOverlay: { ...metadata.textOverlay, color: e.target.value }
+                    })}
+                    className="w-full p-2 h-10 border rounded bg-gray-700"
+                  />
+                </div>
               </div>
             </div>
-          </div>
-)}
+          )}
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">

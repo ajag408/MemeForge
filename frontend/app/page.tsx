@@ -6,6 +6,8 @@ import VotingDashboard from '@/components/meme/VotingDashboard';
 import FeaturedMemes from '@/components/meme/FeaturedMemes';
 import TrendingMemes from '@/components/meme/TrendingMemes';
 import Leaderboard from '@/components/meme/Leaderboard';
+import AllMemes from '@/components/meme/AllMemes';
+
 
 export default function Home() {
   const [activeTab, setActiveTab] = useState('featured');
@@ -43,12 +45,23 @@ export default function Home() {
         >
           👑 Leaderboard
         </button>
+        <button
+          onClick={() => setActiveTab('all')}
+          className={`px-6 py-3 rounded-xl font-bold transition-all duration-300 flex items-center gap-2 ${
+            activeTab === 'leaderboard' 
+              ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white scale-105 shadow-lg' 
+              : 'bg-gray-800/50 text-gray-300 hover:bg-gray-700/50'
+          }`}
+        >
+          🎭 All
+        </button>
       </div>
 
       <div className="backdrop-blur-lg bg-black/20 p-6 rounded-xl">
         {activeTab === 'featured' && <FeaturedMemes />}
         {activeTab === 'trending' && <TrendingMemes />}
         {activeTab === 'leaderboard' && <Leaderboard />}
+        {activeTab === 'all' && <AllMemes/>}
       </div>
     </div>
   );
