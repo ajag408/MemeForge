@@ -10,14 +10,18 @@
     "test:ipfs": "NODE_ENV=test ts-node -P test-tsconfig.json utils/test-ipfs.ts"
   },
   "dependencies": {
+    "@account-kit/infra": "^4.6.0",
+    "@account-kit/smart-contracts": "^4.6.0",
+    "@alchemy/aa-alchemy": "^3.19.0",
+    "@alchemy/aa-core": "^3.19.0",
     "axios": "^1.7.8",
     "chart.js": "^4.4.7",
     "ethers": "^5.7.2",
     "ipfs-http-client": "^60.0.1",
     "next": "15.0.3",
-    "react": "19.0.0-rc-66855b96-20241106",
+    "react": "^18.2.0",
     "react-chartjs-2": "^5.2.0",
-    "react-dom": "19.0.0-rc-66855b96-20241106"
+    "react-dom": "^18.2.0"
   },
   "devDependencies": {
     "@types/node": "^20",

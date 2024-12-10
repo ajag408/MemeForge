@@ -5,6 +5,8 @@ import Image from 'next/image';
 import type { Meme } from '@/types/meme';
 import { uploadToIPFS } from '@/utils/ipfs';
 import { useContract } from '@/contexts/ContractContext';
+import { useSmartAccount } from '@/contexts/SmartAccountContext';
+import { ethers } from 'ethers';
 
 interface RemixEditorProps {
   originalMeme: Meme;
@@ -13,18 +15,29 @@ interface RemixEditorProps {
 
 export default function RemixEditor({ originalMeme, onClose }: RemixEditorProps) {
   const { contract, signer } = useContract();
+  const { smartAccount, isInitialized } = useSmartAccount();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [tags, setTags] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [originalMetadata, setOriginalMetadata] = useState<any>(null);
+  const [isSponsored, setIsSponsored] = useState(false);
   const [textOverlay, setTextOverlay] = useState({
     topText: '',
     bottomText: '',
     fontSize: '400',
     color: '#ffffff'
   });
+
+  useEffect(() => {
+    const checkSponsorship = async () => {
+      if (!contract || !originalMeme.tokenId) return;
+      const sponsored = await contract.sponsoredMemes(originalMeme.tokenId);
+      setIsSponsored(sponsored);
+    };
+    checkSponsorship();
+  }, [contract, originalMeme.tokenId]);
 
   useEffect(() => {
     const loadOriginalMeme = async () => {
@@ -111,7 +124,6 @@ export default function RemixEditor({ originalMeme, onClose }: RemixEditorProps)
 
     setIsLoading(true);
     try {
-      // Convert canvas to blob and upload to IPFS
       const blob = await new Promise<Blob>((resolve) => 
         canvasRef.current!.toBlob((blob) => resolve(blob as Blob))
       );
@@ -120,7 +132,6 @@ export default function RemixEditor({ originalMeme, onClose }: RemixEditorProps)
       const file = new File([blob], uniqueFilename, { type: 'image/png' });
       const imageHash = await uploadToIPFS(file);
       
-      // Create and upload metadata
       const metadata = {
         title: title || 'Untitled Remix',
         description: description || 'A remixed meme',
@@ -134,10 +145,27 @@ export default function RemixEditor({ originalMeme, onClose }: RemixEditorProps)
       const metadataBlob = new Blob([JSON.stringify(metadata)], { type: 'application/json' });
       const metadataFile = new File([metadataBlob], 'metadata.json');
       const metadataHash = await uploadToIPFS(metadataFile);
-      
-      // Create remix on blockchain
-      const tx = await contract.remixMeme(originalMeme.tokenId, metadataHash);
-      await tx.wait();
+
+      if (isSponsored && smartAccount && isInitialized) {
+        // Get signature from original creator
+        const messageHash = ethers.utils.solidityKeccak256(
+          ['uint256', 'string', 'address'],
+          [originalMeme.tokenId, metadataHash, await signer.getAddress()]
+        );
+        const signature = await signer.signMessage(ethers.utils.arrayify(messageHash));
+
+        // Use smart account for sponsored remix
+        const tx = await contract.populateTransaction.createSponsoredRemix(
+          originalMeme.tokenId,
+          metadataHash,
+          signature
+        );
+        await smartAccount.executeTransaction(tx);
+      } else {
+        // Regular remix
+        const tx = await contract.remixMeme(originalMeme.tokenId, metadataHash);
+        await tx.wait();
+      }
       
       onClose();
     } catch (error) {
@@ -155,6 +183,11 @@ export default function RemixEditor({ originalMeme, onClose }: RemixEditorProps)
             <h2 className="text-2xl font-bold text-white">Remix Meme</h2>
             <p className="text-sm text-gray-400">
               Original by {originalMeme.creator.slice(0, 6)}...{originalMeme.creator.slice(-4)}
+              {isSponsored && (
+                <span className="ml-2 bg-green-500/20 text-green-300 px-2 py-1 rounded-full text-xs">
+                  Sponsored Remix ✨
+                </span>
+              )}
             </p>
           </div>
           <button onClick={onClose} className="text-gray-400 hover:text-white">✕</button>

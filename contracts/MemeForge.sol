@@ -6,19 +6,12 @@ import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
 import "@openzeppelin/contracts/token/common/ERC2981.sol"; 
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 
 
 contract MemeForge is ERC721, ERC721URIStorage, ERC2981, Ownable, ReentrancyGuard {
     uint256 private _nextTokenId;
 
-    // External NFT contract interfaces
-    IERC721 public keyNFT;
-    IERC721 public eyeNFT;
-
-    // // Popularity metrics
-    // mapping(uint256 => uint256) public likes;
-    // mapping(uint256 => uint256) public remixes;
-    // mapping(uint256 => uint256) public votes;
     
     // Royalty tracking
     mapping(uint256 => address) public originalCreators;
@@ -28,6 +21,9 @@ contract MemeForge is ERC721, ERC721URIStorage, ERC2981, Ownable, ReentrancyGuar
     mapping(address => mapping(uint256 => bool)) public hasVoted;
 
     uint96 public constant REMIX_ROYALTY_PERCENTAGE = 1000; // 10% in basis points
+    
+    // Mapping to track if a meme creator wants to sponsor remixes
+    mapping(uint256 => bool) public sponsoredMemes;
 
     struct MemeData {
         string uri;
@@ -51,18 +47,9 @@ contract MemeForge is ERC721, ERC721URIStorage, ERC2981, Ownable, ReentrancyGuar
 
     constructor() ERC721("MemeForge", "MEME") Ownable(msg.sender) {}
 
-    // NFT Holder checks
-    function isKeyHolder(address user) public view returns (bool) {
-        return keyNFT.balanceOf(user) > 0;
-    }
-
-    function isEyeHolder(address user) public view returns (bool) {
-        return eyeNFT.balanceOf(user) > 0;
-    }
 
     // Minting functions
     function createMeme(string memory uri) public nonReentrant returns (uint256) {
-        // require(isKeyHolder(msg.sender), "Must hold a Key NFT to create memes");
         require(bytes(uri).length > 0 && bytes(uri).length <= 512, "Invalid URI length");
 
         uint256 tokenId = _nextTokenId++;
@@ -89,7 +76,6 @@ contract MemeForge is ERC721, ERC721URIStorage, ERC2981, Ownable, ReentrancyGuar
     // Remix functionality
     function remixMeme(uint256 originalTokenId, string memory newTokenURI) public nonReentrant returns (uint256) {
         require(ownerOf(originalTokenId) != address(0), "Original meme does not exist");
-        // require(isEyeHolder(msg.sender), "Must hold an Eye NFT to remix memes");
 
         uint256 tokenId = _nextTokenId++;
 
@@ -115,6 +101,34 @@ contract MemeForge is ERC721, ERC721URIStorage, ERC2981, Ownable, ReentrancyGuar
         return tokenId;
     }
 
+
+    // Enable sponsorship for your meme
+    function enableRemixSponsorship(uint256 tokenId) external {
+        require(ownerOf(tokenId) == msg.sender, "Not meme owner");
+        sponsoredMemes[tokenId] = true;
+    }
+
+        // Function to create a sponsored remix
+    function createSponsoredRemix(
+        uint256 originalTokenId,
+        string memory metadataURI,
+        bytes calldata signature
+    ) external {
+        require(sponsoredMemes[originalTokenId], "Remix not sponsored");
+        
+        // Verify the signature from the original meme creator
+        bytes32 messageHash = keccak256(abi.encodePacked(
+            originalTokenId,
+            metadataURI,
+            msg.sender
+        ));
+        address signer = ECDSA.recover(messageHash, signature);
+        require(ownerOf(originalTokenId) == signer, "Invalid signature");
+
+        // Create the remix
+        remixMeme(originalTokenId, metadataURI);
+    }
+
     // Popularity metrics
     function likeMeme(uint256 tokenId) public nonReentrant {
         require(ownerOf(tokenId) != address(0), "Meme does not exist");
@@ -128,13 +142,14 @@ contract MemeForge is ERC721, ERC721URIStorage, ERC2981, Ownable, ReentrancyGuar
     // DAO voting
     function voteMeme(uint256 tokenId) public nonReentrant {
         require(ownerOf(tokenId) != address(0), "Meme does not exist");
-        // require(balanceOf(msg.sender) > 0, "Must hold a Meme NFT to vote");
+        require(balanceOf(msg.sender) > 0, "Must hold a Meme NFT to vote");
         require(!hasVoted[msg.sender][tokenId], "Already voted on this meme");
 
         hasVoted[msg.sender][tokenId] = true;
         memes[tokenId].votes++;
         emit MemeVoted(tokenId, msg.sender);
     }
+
 
     // View functions for other worlds
     function getMemeData(uint256 tokenId) public view returns (MemeData memory) {
@@ -204,16 +219,6 @@ contract MemeForge is ERC721, ERC721URIStorage, ERC2981, Ownable, ReentrancyGuar
         return super.royaltyInfo(tokenId, salePrice);
     }
 
-    // Add setter functions for NFT addresses
-    function setKeyNFT(address _keyNFT) public onlyOwner {
-        require(_keyNFT != address(0), "Invalid address");
-        keyNFT = IERC721(_keyNFT);
-    }
-
-    function setEyeNFT(address _eyeNFT) public onlyOwner {
-        require(_eyeNFT != address(0), "Invalid address");
-        eyeNFT = IERC721(_eyeNFT);
-    }
 
     function getNextTokenId() public view returns (uint256) {
         return _nextTokenId;

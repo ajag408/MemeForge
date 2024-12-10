@@ -1,6 +1,7 @@
 import { ContractProvider } from '../contexts/ContractContext';
 import MainLayout from '@/components/layout/MainLayout';
 import '@/styles/globals.css';
+import { SmartAccountProvider } from '@/contexts/SmartAccountContext';
 
 export default function RootLayout({
   children,
@@ -10,11 +11,13 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>
-        <ContractProvider>
-          <MainLayout>
-            {children}
-          </MainLayout>
-        </ContractProvider>
+        <SmartAccountProvider>
+          <ContractProvider>
+            <MainLayout>
+              {children}
+            </MainLayout>
+          </ContractProvider>
+        </SmartAccountProvider>
       </body>
     </html>
   );
