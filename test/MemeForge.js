@@ -184,4 +184,133 @@ describe("MemeForge", function () {
     //     .be.reverted;
     // });
   });
+  describe("GasBack Functionality", function () {
+    let MockGasBack, gasBack;
+
+    beforeEach(async function () {
+      // Deploy mock GasBack contract
+      MockGasBack = await ethers.getContractFactory("MockGasBack");
+      gasBack = await MockGasBack.deploy();
+
+      // Fund the mock GasBack contract
+      await owner.sendTransaction({
+        to: gasBack.address,
+        value: ethers.utils.parseEther("10.0"),
+      });
+    });
+
+    describe("GasBack Setup", function () {
+      it("Should allow owner to set GasBack contract", async function () {
+        await expect(
+          memeForge.connect(owner).setGasBackContract(gasBack.address)
+        )
+          .to.emit(memeForge, "GasBackContractSet")
+          .withArgs(gasBack.address);
+
+        expect(await memeForge.gasBackContract()).to.equal(gasBack.address);
+      });
+
+      it("Should prevent non-owner from setting GasBack contract", async function () {
+        await expect(
+          memeForge.connect(user1).setGasBackContract(gasBack.address)
+        ).to.be.revertedWith("Ownable: caller is not the owner");
+      });
+
+      it("Should allow owner to set GasBack token ID", async function () {
+        await expect(memeForge.connect(owner).setGasBackTokenId(1))
+          .to.emit(memeForge, "GasBackTokenIdSet")
+          .withArgs(1);
+
+        expect(await memeForge.gasBackTokenId()).to.equal(1);
+      });
+    });
+
+    describe("GasBack Withdrawal", function () {
+      beforeEach(async function () {
+        await memeForge.connect(owner).setGasBackContract(gasBack.address);
+        await memeForge.connect(owner).setGasBackTokenId(1);
+      });
+
+      it("Should allow owner to withdraw GasBack", async function () {
+        await ethers.provider.send("evm_increaseTime", [30 * 24 * 60 * 60]); // 30 days
+
+        await expect(
+          memeForge
+            .connect(owner)
+            .withdrawGasBack(ethers.utils.parseEther("1.0"))
+        )
+          .to.emit(memeForge, "GasBackWithdrawn")
+          .withArgs(
+            ethers.utils.parseEther("1.0"),
+            await ethers.provider.getBlock("latest").then((b) => b.timestamp)
+          );
+
+        expect(await memeForge.undistributedGasBack()).to.equal(
+          ethers.utils.parseEther("1.0")
+        );
+      });
+
+      it("Should prevent withdrawal before interval", async function () {
+        await expect(
+          memeForge
+            .connect(owner)
+            .withdrawGasBack(ethers.utils.parseEther("1.0"))
+        ).to.be.revertedWith("Too early to withdraw");
+      });
+    });
+
+    describe("Reward Distribution", function () {
+      beforeEach(async function () {
+        // Setup GasBack
+        await memeForge.connect(owner).setGasBackContract(gasBack.address);
+        await memeForge.connect(owner).setGasBackTokenId(1);
+
+        // Create memes and generate activity
+        await memeForge.connect(user1).createMeme(TEST_URI);
+        await memeForge.connect(user2).remixMeme(0, REMIX_URI);
+        await memeForge.connect(user1).likeMeme(1);
+        await memeForge.connect(user2).voteMeme(0);
+
+        // Withdraw GasBack
+        await ethers.provider.send("evm_increaseTime", [30 * 24 * 60 * 60]);
+        await memeForge
+          .connect(owner)
+          .withdrawGasBack(ethers.utils.parseEther("1.0"));
+      });
+
+      it("Should distribute rewards correctly", async function () {
+        await expect(
+          memeForge.connect(owner).distributeGasBackRewards()
+        ).to.emit(memeForge, "RewardsDistributed");
+
+        // Check creator rewards
+        const creator1Rewards = await memeForge.creatorRewards(user1.address);
+        expect(creator1Rewards).to.be.gt(0);
+
+        // Check remixer rewards
+        const remixer2Rewards = await memeForge.remixerRewards(user2.address);
+        expect(remixer2Rewards).to.be.gt(0);
+      });
+
+      it("Should allow users to withdraw their rewards", async function () {
+        await memeForge.connect(owner).distributeGasBackRewards();
+
+        const initialBalance = await ethers.provider.getBalance(user1.address);
+        await memeForge.connect(user1).withdrawRewards();
+        const finalBalance = await ethers.provider.getBalance(user1.address);
+
+        expect(finalBalance).to.be.gt(initialBalance);
+        expect(await memeForge.creatorRewards(user1.address)).to.equal(0);
+      });
+
+      it("Should prevent double withdrawal of rewards", async function () {
+        await memeForge.connect(owner).distributeGasBackRewards();
+        await memeForge.connect(user1).withdrawRewards();
+
+        await expect(
+          memeForge.connect(user1).withdrawRewards()
+        ).to.be.revertedWith("No rewards to withdraw");
+      });
+    });
+  });
 });
