@@ -2,13 +2,15 @@ import { useState, useEffect } from 'react';
 import { useContract } from '@/contexts/ContractContext';
 import { ethers } from 'ethers';
 import type { NFTGating } from '@/types/nft';
+import { useSmartAccount } from '@/contexts/SmartAccountContext';
 
 const KEY_NFT_ADDRESS = process.env.NEXT_PUBLIC_KEY_NFT_ADDRESS;
 const EYE_NFT_ADDRESS = process.env.NEXT_PUBLIC_EYE_NFT_ADDRESS;
 const NFT_ABI = ["function balanceOf(address owner) view returns (uint256)"];
 
 export function useNFTGating() {
-  const { signer } = useContract();
+  const { contract, signer } = useContract();
+  const { smartAccountAddress } = useSmartAccount();
   const [nftStatus, setNftStatus] = useState<NFTGating>({ 
     hasKeyNFT: false, 
     hasEyeNFT: false 
@@ -17,15 +19,15 @@ export function useNFTGating() {
 
   useEffect(() => {
     const checkNFTs = async () => {
-      if (!signer) {
+      if (!contract || (!signer && !smartAccountAddress)){
         setIsLoading(false);
         return;
       }
 
       try {
-        const address = await signer.getAddress();
-        const keyContract = new ethers.Contract(KEY_NFT_ADDRESS!, NFT_ABI, signer);
-        const eyeContract = new ethers.Contract(EYE_NFT_ADDRESS!, NFT_ABI, signer);
+        const address = await signer!.getAddress();
+        const keyContract = new ethers.Contract(KEY_NFT_ADDRESS!, NFT_ABI, signer!);
+        const eyeContract = new ethers.Contract(EYE_NFT_ADDRESS!, NFT_ABI, signer!);
 
         const [keyBalance, eyeBalance] = await Promise.all([
           keyContract.balanceOf(address),
@@ -44,7 +46,7 @@ export function useNFTGating() {
     };
 
     checkNFTs();
-  }, [signer]);
+  }, [contract, signer, smartAccountAddress]);
 
   return { ...nftStatus, isLoading, signer };
 }

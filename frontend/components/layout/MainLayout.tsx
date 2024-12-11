@@ -2,10 +2,13 @@
 
 import Link from 'next/link';
 import { useContract } from '@/contexts/ContractContext';
+import { useSmartAccount } from '@/contexts/SmartAccountContext';
 import WalletConnect from '../WalletConnect';
 
 export default function MainLayout({ children }: { children: React.ReactNode }) {
   const { signer } = useContract();
+  const { smartAccountAddress } = useSmartAccount();
+  const isConnected = !!signer || !!smartAccountAddress;
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-900 to-black">
@@ -24,7 +27,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
                 <Link href="/mint" className="text-gray-300 hover:text-white px-3 py-2 rounded-md">
                   Mint
                 </Link>
-                {signer && (
+                {isConnected && (
                   <Link href="/my-memes" className="text-gray-300 hover:text-white px-3 py-2 rounded-md">
                     My Memes
                   </Link>

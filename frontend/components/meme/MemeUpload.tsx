@@ -4,6 +4,7 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 import { uploadToIPFS } from '@/utils/ipfs';
 import Image from 'next/image';
 import { useContract } from '@/contexts/ContractContext';
+import { useSmartAccount } from '@/contexts/SmartAccountContext';
 
 const MEME_TEMPLATES = [
   { name: "Disaster Girl", url: "/templates/disaster-girl.jpg" },
@@ -12,7 +13,7 @@ const MEME_TEMPLATES = [
 ];
 
 interface MemeUploadProps {
-  selectedImage: string | null;
+  selectedImage?: string | null;
 }
 
 export default function MemeUpload({ selectedImage }: MemeUploadProps) {
@@ -34,7 +35,7 @@ export default function MemeUpload({ selectedImage }: MemeUploadProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   
   const { contract, signer } = useContract();
-
+  const { smartAccount } = useSmartAccount();
   useEffect(() => {
     if (selectedImage) {
       fetch(selectedImage)
@@ -114,7 +115,7 @@ export default function MemeUpload({ selectedImage }: MemeUploadProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!canvasRef.current || !contract) return;
-    if (!signer) {
+    if (!signer && !smartAccount) {
       alert("Please connect your wallet to upload memes");
       return;
     }
@@ -143,9 +144,19 @@ export default function MemeUpload({ selectedImage }: MemeUploadProps) {
       const metadataFile = new File([metadataBlob], 'metadata.json');
       const metadataHash = await uploadToIPFS(metadataFile);
 
-      // Mint the meme NFT
-      const tx = await contract.createMeme(metadataHash);
-      await tx.wait();
+      if (smartAccount) {
+        // Smart Account transaction
+        // const tx = await contract.populateTransaction.createMeme(metadataHash);
+        // console.log("tx: ", tx);
+        // await smartAccount.executeTransaction(tx);
+        alert("Smart account transactions are not supported yet. Please use a regular wallet.");
+        return;
+    } else {
+        // Regular wallet transaction
+        const tx = await contract.createMeme(metadataHash);
+        await tx.wait();
+    }
+
       
       // Reset form
       setFile(null);

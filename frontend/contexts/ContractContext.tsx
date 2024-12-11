@@ -3,6 +3,7 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { ethers } from 'ethers';
 import MemeForgeContract from '../contracts/MemeForge.json';
+import { useSmartAccount } from '@/contexts/SmartAccountContext';
 
 const REQUIRED_CHAIN_ID = 11011;
 
@@ -12,16 +13,18 @@ interface ContractContextType {
   isWrongNetwork: boolean;
   connect: () => Promise<ethers.Signer | null>;
   disconnect: () => void;
-  switchNetwork: () => Promise<void>; // Add this line
-
+  switchNetwork: () => Promise<void>;
+  isConnected: boolean;
 }
 
 const ContractContext = createContext<ContractContextType | null>(null);
 
 export function ContractProvider({ children }: { children: ReactNode }) {
+  const { smartAccount, smartAccountAddress } = useSmartAccount();
   const [contract, setContract] = useState<ethers.Contract | null>(null);
   const [signer, setSigner] = useState<ethers.Signer | null>(null);
   const [isWrongNetwork, setIsWrongNetwork] = useState(false);
+  const [isConnected, setIsConnected] = useState(false);
 
   useEffect(() => {
     if (typeof window === 'undefined' || !window.ethereum) return;
@@ -34,6 +37,20 @@ export function ContractProvider({ children }: { children: ReactNode }) {
     );
     setContract(newContract);
   }, []);
+
+  useEffect(() => {
+    if (contract && (signer || smartAccount?.signer)) {
+        const activeSigner = smartAccount?.signer || signer;
+        if (activeSigner) {
+            const connectedContract = contract.connect(activeSigner);
+            setContract(connectedContract);
+        }
+    }
+  }, [signer, smartAccount]);
+
+  useEffect(() => {
+    setIsConnected(!!signer || !!smartAccountAddress);
+  }, [signer, smartAccountAddress]);
 
   const switchNetwork = async () => {
     try {
@@ -91,7 +108,15 @@ export function ContractProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <ContractContext.Provider value={{ switchNetwork, contract, signer, isWrongNetwork, connect, disconnect }}>
+    <ContractContext.Provider value={{
+      contract,
+      signer: smartAccount?.signer || signer,
+      isWrongNetwork,
+      connect,
+      disconnect,
+      switchNetwork,
+      isConnected
+    }}>
       {children}
     </ContractContext.Provider>
   );

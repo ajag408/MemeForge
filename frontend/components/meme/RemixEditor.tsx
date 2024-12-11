@@ -15,14 +15,13 @@ interface RemixEditorProps {
 
 export default function RemixEditor({ originalMeme, onClose }: RemixEditorProps) {
   const { contract, signer } = useContract();
-  const { smartAccount, isInitialized } = useSmartAccount();
+  const { smartAccount } = useSmartAccount();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [tags, setTags] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [originalMetadata, setOriginalMetadata] = useState<any>(null);
-  const [isSponsored, setIsSponsored] = useState(false);
   const [textOverlay, setTextOverlay] = useState({
     topText: '',
     bottomText: '',
@@ -30,14 +29,6 @@ export default function RemixEditor({ originalMeme, onClose }: RemixEditorProps)
     color: '#ffffff'
   });
 
-  useEffect(() => {
-    const checkSponsorship = async () => {
-      if (!contract || !originalMeme.tokenId) return;
-      const sponsored = await contract.sponsoredMemes(originalMeme.tokenId);
-      setIsSponsored(sponsored);
-    };
-    checkSponsorship();
-  }, [contract, originalMeme.tokenId]);
 
   useEffect(() => {
     const loadOriginalMeme = async () => {
@@ -120,10 +111,19 @@ export default function RemixEditor({ originalMeme, onClose }: RemixEditorProps)
   };
 
   const handleSave = async () => {
-    if (!contract || !signer || !canvasRef.current) return;
+    if (!contract || !canvasRef.current ) return;
 
-    setIsLoading(true);
+    if (!signer) {
+        alert("Please connect your wallet to create remixes");
+        return;
+    }
+    
+    if (smartAccount) {
+        alert("Smart account transactions are not supported yet. Please use a regular wallet.");
+        return;
+    }
     try {
+    setIsLoading(true);
       const blob = await new Promise<Blob>((resolve) => 
         canvasRef.current!.toBlob((blob) => resolve(blob as Blob))
       );
@@ -146,26 +146,10 @@ export default function RemixEditor({ originalMeme, onClose }: RemixEditorProps)
       const metadataFile = new File([metadataBlob], 'metadata.json');
       const metadataHash = await uploadToIPFS(metadataFile);
 
-      if (isSponsored && smartAccount && isInitialized) {
-        // Get signature from original creator
-        const messageHash = ethers.utils.solidityKeccak256(
-          ['uint256', 'string', 'address'],
-          [originalMeme.tokenId, metadataHash, await signer.getAddress()]
-        );
-        const signature = await signer.signMessage(ethers.utils.arrayify(messageHash));
-
-        // Use smart account for sponsored remix
-        const tx = await contract.populateTransaction.createSponsoredRemix(
-          originalMeme.tokenId,
-          metadataHash,
-          signature
-        );
-        await smartAccount.executeTransaction(tx);
-      } else {
-        // Regular remix
-        const tx = await contract.remixMeme(originalMeme.tokenId, metadataHash);
-        await tx.wait();
-      }
+    // Regular remix
+    const tx = await contract.remixMeme(originalMeme.tokenId, metadataHash);
+    await tx.wait();
+      
       
       onClose();
     } catch (error) {
@@ -183,11 +167,7 @@ export default function RemixEditor({ originalMeme, onClose }: RemixEditorProps)
             <h2 className="text-2xl font-bold text-white">Remix Meme</h2>
             <p className="text-sm text-gray-400">
               Original by {originalMeme.creator.slice(0, 6)}...{originalMeme.creator.slice(-4)}
-              {isSponsored && (
-                <span className="ml-2 bg-green-500/20 text-green-300 px-2 py-1 rounded-full text-xs">
-                  Sponsored Remix ✨
-                </span>
-              )}
+
             </p>
           </div>
           <button onClick={onClose} className="text-gray-400 hover:text-white">✕</button>

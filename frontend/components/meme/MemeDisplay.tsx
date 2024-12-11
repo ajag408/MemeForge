@@ -6,6 +6,8 @@ import Link from 'next/link';
 import type { Meme, MemeMetadata } from '@/types/meme';
 import { useContract } from '@/contexts/ContractContext';
 import { useEyeHolderStatus } from '@/hooks/useEyeHolderStatus';
+import { useSmartAccount } from '@/contexts/SmartAccountContext';
+
 
 interface MemeDisplayProps {
   meme: Meme;
@@ -15,20 +17,13 @@ interface MemeDisplayProps {
 
 export default function MemeDisplay({ meme, onRemix, showFullSize }: MemeDisplayProps) {
   const [isLiking, setIsLiking] = useState(false);
+  const { smartAccount } = useSmartAccount();
+
   const { contract, signer } = useContract();
   const [metadata, setMetadata] = useState<MemeMetadata | null>(null);
   const [imageUrl, setImageUrl] = useState('');
   const { isEyeHolder } = useEyeHolderStatus(meme.creator);
-  const [isSponsored, setIsSponsored] = useState(false);
 
-  useEffect(() => {
-    const checkSponsorship = async () => {
-      if (!contract || !meme.tokenId) return;
-      const sponsored = await contract.sponsoredMemes(meme.tokenId);
-      setIsSponsored(sponsored);
-    };
-    checkSponsorship();
-  }, [contract, meme.tokenId]);
 
   const handleRemix = () => {
     if (!signer) {
@@ -46,6 +41,11 @@ export default function MemeDisplay({ meme, onRemix, showFullSize }: MemeDisplay
       return;
     }
     
+    if (smartAccount) {
+      alert("Smart account transactions are not supported yet. Please use a regular wallet.");
+      return;
+    }
+
     try {
       setIsLiking(true);
       const tx = await contract.likeMeme(meme.tokenId);
@@ -80,11 +80,6 @@ export default function MemeDisplay({ meme, onRemix, showFullSize }: MemeDisplay
       {isEyeHolder && (
         <div className="absolute top-2 right-2 bg-purple-500/80 text-white px-2 py-1 rounded-full text-xs flex items-center gap-1 z-10">
           👁️ Eye Holder
-        </div>
-      )}
-      {isSponsored && (
-        <div className="absolute top-2 left-2 bg-green-500/80 text-white px-2 py-1 rounded-full text-xs flex items-center gap-1 z-10">
-          ✨ Sponsored Remixes
         </div>
       )}
       <div className="border-2 border-purple-500/20 rounded-xl overflow-hidden bg-gradient-to-br from-gray-900 to-gray-800 text-white shadow-xl hover-scale">
