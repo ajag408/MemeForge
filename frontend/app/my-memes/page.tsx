@@ -14,7 +14,7 @@ interface ProfileStats {
 }
 
 export default function ProfilePage() {
-  const { memeForgeCore: contract, signer } = useContract();
+  const { memeForgeCore: contract, memeForgeGasBack: gasBackContract, signer } = useContract();
   const [mintedMemes, setMintedMemes] = useState<Meme[]>([]);
   const [remixedMemes, setRemixedMemes] = useState<Meme[]>([]);
   const [stats, setStats] = useState<ProfileStats>({
@@ -26,6 +26,7 @@ export default function ProfilePage() {
   });
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('minted');
+  const [isClaimingGasBack, setIsClaimingGasBack] = useState(false);
 
   useEffect(() => {
     const loadUserMemes = async () => {
@@ -88,58 +89,81 @@ export default function ProfilePage() {
     return <div className="text-center py-8">Loading profile...</div>;
   }
 
+  const handleClaimGasBack = async () => {
+    if (!gasBackContract || !signer) {
+      alert("Please connect your wallet to claim GasBack");
+      return;
+    }
+
+    try {
+      setIsClaimingGasBack(true);
+      const tx = await gasBackContract.withdrawRewards();
+      await tx.wait();
+      alert("Successfully claimed GasBack rewards!");
+    } catch (error) {
+      console.error("Error claiming GasBack:", error);
+      alert("Failed to claim GasBack. Please try again.");
+    } finally {
+      setIsClaimingGasBack(false);
+    }
+  };
+
   return (
     <div className="space-y-8">
-      {/* Stats Overview */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="bg-gradient-to-br from-purple-900 to-purple-800 p-6 rounded-xl">
-          <h3 className="text-lg font-semibold text-purple-200">Engagement</h3>
-          <div className="mt-2 space-y-1">
-            <p className="text-white">❤️ {stats.totalLikes} Likes</p>
-            <p className="text-white">🔄 {stats.totalRemixes} Remixes</p>
-            <p className="text-white">🗳️ {stats.totalVotes} Votes</p>
+      {/* Profile Stats & Rewards Section */}
+      <div className="bg-gradient-to-br from-gray-900 to-gray-800 p-6 rounded-xl">
+        <h2 className="text-2xl font-bold text-white mb-4">Your Rewards</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+          {/* Stats Card */}
+          <div className="bg-purple-500/20 text-purple-300 p-4 rounded-lg">
+            <p className="text-lg">🎨 Total Likes: {stats.totalLikes}</p>
+            <p className="text-lg">🔄 Total Remixes: {stats.totalRemixes}</p>
+            <p className="text-lg">🗳️ Total Votes: {stats.totalVotes}</p>
           </div>
-        </div>
-        
-        <div className="bg-gradient-to-br from-blue-900 to-blue-800 p-6 rounded-xl">
-          <h3 className="text-lg font-semibold text-blue-200">Rewards</h3>
-          <div className="mt-2 space-y-1">
-            <p className="text-white">💰 {stats.royaltiesEarned} ETH Royalties</p>
-            <p className="text-white">⛽ {stats.gasBackEarned} ETH GasBack</p>
+          
+          {/* Rewards Card */}
+          <div className="bg-green-500/20 text-green-300 p-4 rounded-lg">
+            <p className="text-lg">💰 Royalties Earned: {stats.royaltiesEarned} ETH</p>
+            <p className="text-lg">⛽ GasBack Earned: {stats.gasBackEarned} ETH</p>
+            <button
+              onClick={handleClaimGasBack}
+              disabled={isClaimingGasBack || !signer || stats.gasBackEarned <= 0}
+              className="mt-4 w-full bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+            >
+              {isClaimingGasBack ? (
+                <span className="flex items-center justify-center">
+                  <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Claiming...
+                </span>
+              ) : (
+                "Claim GasBack"
+              )}
+            </button>
           </div>
         </div>
       </div>
 
-      {/* Tabs */}
-      <div className="flex space-x-4">
-        <button
-          onClick={() => setActiveTab('minted')}
-          className={`px-4 py-2 rounded-lg ${
-            activeTab === 'minted' 
-              ? 'bg-purple-500 text-white' 
-              : 'bg-gray-800 text-gray-300'
-          }`}
-        >
-          Minted Memes ({mintedMemes.length})
-        </button>
-        <button
-          onClick={() => setActiveTab('remixed')}
-          className={`px-4 py-2 rounded-lg ${
-            activeTab === 'remixed' 
-              ? 'bg-purple-500 text-white' 
-              : 'bg-gray-800 text-gray-300'
-          }`}
-        >
-          Remixed Memes ({remixedMemes.length})
-        </button>
+      {/* Minted Memes Section */}
+      <div className="bg-gradient-to-br from-gray-900 to-gray-800 p-6 rounded-xl">
+        <h2 className="text-2xl font-bold text-white mb-4">Your Original Memes</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {mintedMemes.map((meme) => (
+            <MemeDisplay key={meme.tokenId} meme={meme} />
+          ))}
+        </div>
       </div>
 
-      {/* Meme Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {activeTab === 'minted' 
-          ? mintedMemes.map(meme => <MemeDisplay key={meme.tokenId} meme={meme} />)
-          : remixedMemes.map(meme => <MemeDisplay key={meme.tokenId} meme={meme} />)
-        }
+      {/* Remixed Memes Section */}
+      <div className="bg-gradient-to-br from-gray-900 to-gray-800 p-6 rounded-xl">
+        <h2 className="text-2xl font-bold text-white mb-4">Your Remixed Memes</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {remixedMemes.map((meme) => (
+            <MemeDisplay key={meme.tokenId} meme={meme} />
+          ))}
+        </div>
       </div>
     </div>
   );
