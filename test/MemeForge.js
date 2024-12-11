@@ -435,4 +435,158 @@ describe("MemeForge", function () {
       ).to.be.revertedWith("No rewards to withdraw");
     });
   });
+  describe("Royalty Distribution", function () {
+    const SALE_PRICE = ethers.parseEther("1.0"); // 1 ETH
+
+    beforeEach(async function () {
+      // Create an original meme and a remix for testing
+      await memeForgeCore.connect(user1).createMeme(TEST_URI);
+      await memeForgeCore.connect(user2).remixMeme(0, REMIX_URI);
+    });
+
+    it("Should calculate correct royalties for original memes", async function () {
+      const [receiver, royaltyAmount] = await memeForgeCore.royaltyInfo(
+        0,
+        SALE_PRICE
+      );
+
+      // For original memes: 5% creator + 5% dev = 10%
+      expect(receiver).to.equal(await memeForgeCore.getAddress());
+      expect(royaltyAmount).to.equal(
+        (SALE_PRICE * BigInt(1000)) / BigInt(10000)
+      ); // 10%
+    });
+
+    it("Should calculate correct royalties for remixed memes", async function () {
+      const [receiver, royaltyAmount] = await memeForgeCore.royaltyInfo(
+        1,
+        SALE_PRICE
+      );
+
+      // For remixed: 5% creator + 3% dev + 2% remixer = 10%
+      expect(receiver).to.equal(await memeForgeCore.getAddress());
+      expect(royaltyAmount).to.equal(
+        (SALE_PRICE * BigInt(1000)) / BigInt(10000)
+      ); // 10%
+    });
+
+    it("Should distribute royalties correctly for original memes", async function () {
+      // Create a new account for sending royalties
+      const [_, __, ___, royaltySender] = await ethers.getSigners();
+
+      // Get initial balances
+      const initialCreatorBalance = await ethers.provider.getBalance(
+        user1.address
+      );
+      const initialDevBalance = await ethers.provider.getBalance(owner.address);
+
+      // Simulate sale of original meme using royaltySender
+      const salePrice = ethers.parseEther("1.0");
+      await memeForgeCore
+        .connect(royaltySender)
+        .receiveRoyalties(0, { value: salePrice });
+
+      // Get final balances
+      const finalCreatorBalance = await ethers.provider.getBalance(
+        user1.address
+      );
+      const finalDevBalance = await ethers.provider.getBalance(owner.address);
+
+      // Calculate expected amounts (5% each for creator and dev)
+      const expectedCreatorAmount = (salePrice * BigInt(500)) / BigInt(10000); // 5%
+      const expectedDevAmount = (salePrice * BigInt(500)) / BigInt(10000); // 5%
+
+      // Check that balances increased by at least the expected amounts
+      expect(finalCreatorBalance - initialCreatorBalance).to.be.gte(
+        expectedCreatorAmount
+      );
+      expect(finalDevBalance - initialDevBalance).to.be.gte(expectedDevAmount);
+    });
+
+    it("Should distribute royalties correctly for remixed memes", async function () {
+      const [_, __, ___, royaltySender] = await ethers.getSigners();
+
+      // Create a remix first
+      // await memeForgeCore.connect(user2).remixMeme(0, REMIX_URI);
+      const remixTokenId = 1;
+
+      console.log("user1: ", user1.address);
+      console.log("user2: ", user2.address);
+      // Get initial balances
+      const initialCreatorBalance = await ethers.provider.getBalance(
+        user1.address
+      );
+      const initialDevBalance = await ethers.provider.getBalance(owner.address);
+      const initialRemixerBalance = await ethers.provider.getBalance(
+        user2.address
+      );
+
+      // Simulate sale of remixed meme
+      const salePrice = ethers.parseEther("1.0");
+
+      // Debug: Print meme data before royalty distribution
+      const meme = await memeForgeCore.memes(remixTokenId);
+      console.log("Meme data:", {
+        creator: meme.creator,
+        originalMemeId: meme.originalMemeId.toString(),
+        remixed: meme.isRemix,
+      });
+
+      await memeForgeCore
+        .connect(royaltySender)
+        .receiveRoyalties(remixTokenId, { value: salePrice });
+
+      // Get final balances
+      const finalCreatorBalance = await ethers.provider.getBalance(
+        user1.address
+      );
+      const finalDevBalance = await ethers.provider.getBalance(owner.address);
+      const finalRemixerBalance = await ethers.provider.getBalance(
+        user2.address
+      );
+
+      // Calculate expected amounts
+      const expectedCreatorAmount = (salePrice * BigInt(500)) / BigInt(10000); // 5%
+      const expectedDevAmount = (salePrice * BigInt(300)) / BigInt(10000); // 3%
+      const expectedRemixerAmount = (salePrice * BigInt(200)) / BigInt(10000); // 2%
+
+      // Debug: Print balance changes
+      console.log("Balance changes:", {
+        creator: (finalCreatorBalance - initialCreatorBalance).toString(),
+        dev: (finalDevBalance - initialDevBalance).toString(),
+        remixer: (finalRemixerBalance - initialRemixerBalance).toString(),
+      });
+
+      expect(finalCreatorBalance - initialCreatorBalance).to.be.gte(
+        expectedCreatorAmount
+      );
+      expect(finalDevBalance - initialDevBalance).to.be.gte(expectedDevAmount);
+      expect(finalRemixerBalance - initialRemixerBalance).to.be.gte(
+        expectedRemixerAmount
+      );
+    });
+
+    it("Should emit RoyaltiesPaid event with correct values", async function () {
+      await expect(memeForgeCore.receiveRoyalties(1, { value: SALE_PRICE }))
+        .to.emit(memeForgeCore, "RoyaltiesPaid")
+        .withArgs(
+          1, // tokenId
+          SALE_PRICE, // salePrice
+          (SALE_PRICE * BigInt(500)) / BigInt(10000), // creatorAmount (5%)
+          (SALE_PRICE * BigInt(300)) / BigInt(10000), // devAmount (3%)
+          (SALE_PRICE * BigInt(200)) / BigInt(10000) // remixerAmount (2%)
+        );
+    });
+
+    it("Should revert when trying to distribute royalties for non-existent token", async function () {
+      await expect(
+        memeForgeCore.receiveRoyalties(999, { value: SALE_PRICE })
+      ).to.be.revertedWith("Token does not exist");
+    });
+
+    it("Should handle zero value royalty distributions", async function () {
+      await expect(memeForgeCore.receiveRoyalties(0, { value: 0 })).to.not.be
+        .reverted;
+    });
+  });
 });

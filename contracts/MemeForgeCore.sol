@@ -5,8 +5,8 @@ import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import "@openzeppelin/contracts/token/common/ERC2981.sol"; 
 
-// Add this interface at the top
 interface IMemeForgeGasBack {
     function recordTransaction(
         uint256 tokenId,
@@ -17,7 +17,7 @@ interface IMemeForgeGasBack {
         uint8 txType
     ) external;
 }
-contract MemeForgeCore is ERC721, ERC721URIStorage, Ownable, ReentrancyGuard {
+contract MemeForgeCore is ERC721, ERC721URIStorage, Ownable, ReentrancyGuard, ERC2981 {
     uint256 private _nextTokenId;
 
     mapping(address => mapping(uint256 => bool)) public hasLiked;
@@ -40,11 +40,23 @@ contract MemeForgeCore is ERC721, ERC721URIStorage, Ownable, ReentrancyGuard {
     //GasBack contract address
     address public gasBackContract;
 
+    uint96 public constant CREATOR_FEE = 500;  // 5%
+    uint96 public constant DEV_FEE_BASE = 300; // 3%
+    uint96 public constant DEV_FEE_NO_REMIX = 500; // 5% when no remixer
+    uint96 public constant REMIX_FEE = 200;   // 2%
+
     // Events
     event MemeCreated(uint256 indexed tokenId, address creator);
     event MemeLiked(uint256 indexed tokenId, address liker);
     event MemeRemixed(uint256 indexed originalTokenId, uint256 indexed newTokenId, address remixer, string uri);
     event MemeVoted(uint256 indexed tokenId, address voter);
+    event RoyaltiesPaid(
+        uint256 tokenId,
+        uint256 salePrice,
+        uint256 creatorAmount,
+        uint256 devAmount,
+        uint256 remixerAmount
+    );
 
     constructor() ERC721("MemeForge", "MEME") Ownable(msg.sender) {}
 
@@ -99,7 +111,7 @@ contract MemeForgeCore is ERC721, ERC721URIStorage, Ownable, ReentrancyGuard {
 
         memes[tokenId] = MemeData({
             uri: newTokenURI,
-            creator: originalCreator,
+            creator: msg.sender,
             likes: 0,
             remixes: 0,
             votes: 0,
@@ -235,12 +247,85 @@ contract MemeForgeCore is ERC721, ERC721URIStorage, Ownable, ReentrancyGuard {
         return _nextTokenId;
     }
 
+    function royaltyInfo(uint256 tokenId, uint256 salePrice)
+        public
+        view
+        override
+        returns (address receiver, uint256 royaltyAmount)
+    {
+        MemeData storage meme = memes[tokenId];
+        require(meme.creator != address(0), "Token does not exist");
+
+        uint256 creatorAmount = (salePrice * CREATOR_FEE) / 10000;
+        uint256 devAmount;
+        uint256 remixerAmount = 0;
+
+        if (meme.isRemix) {
+            devAmount = (salePrice * DEV_FEE_BASE) / 10000; // 3%
+            remixerAmount = (salePrice * REMIX_FEE) / 10000; // 2%
+        } else {
+            devAmount = (salePrice * DEV_FEE_NO_REMIX) / 10000; // 5%
+        }
+
+        royaltyAmount = creatorAmount + devAmount + remixerAmount;
+        return (address(this), royaltyAmount);
+    }
+
+    function receiveRoyalties(uint256 tokenId) external payable {
+        MemeData storage meme = memes[tokenId];
+        require(meme.creator != address(0), "Token does not exist");
+
+        uint256 salePrice = msg.value;
+        uint256 creatorAmount = (salePrice * CREATOR_FEE) / 10000;
+        uint256 devAmount;
+        uint256 remixerAmount = 0;
+
+
+        if (meme.isRemix) {
+             MemeData storage originalMeme = memes[meme.originalMemeId];
+            devAmount = (salePrice * DEV_FEE_BASE) / 10000; // 3%
+            remixerAmount = (salePrice * REMIX_FEE) / 10000; // 2%
+
+            // Transfer royalties
+            (bool successCreator,) = payable(originalMeme.creator).call{value: creatorAmount}("");
+            require(successCreator, "Failed to send creator royalties");
+
+            (bool successDev,) = payable(owner()).call{value: devAmount}("");
+            require(successDev, "Failed to send dev royalties");
+
+     
+            (bool successRemixer,) = payable(meme.creator).call{value: remixerAmount}("");
+            require(successRemixer, "Failed to send remixer royalties");
+
+        } else {
+            devAmount = (salePrice * DEV_FEE_NO_REMIX) / 10000; // 5%
+            // Transfer royalties
+            (bool successCreator,) = payable(meme.creator).call{value: creatorAmount}("");
+            require(successCreator, "Failed to send creator royalties");
+
+            (bool successDev,) = payable(owner()).call{value: devAmount}("");
+            require(successDev, "Failed to send dev royalties");
+        }
+
+
+
+        emit RoyaltiesPaid(
+            tokenId,
+            salePrice,
+            creatorAmount,
+            devAmount,
+            remixerAmount
+        );
+    }
+
     // Required overrides
+
+
     function tokenURI(uint256 tokenId) public view override(ERC721, ERC721URIStorage) returns (string memory) {
         return super.tokenURI(tokenId);
     }
 
-    function supportsInterface(bytes4 interfaceId) public view override(ERC721, ERC721URIStorage) returns (bool) {
+    function supportsInterface(bytes4 interfaceId) public view override(ERC721, ERC721URIStorage, ERC2981) returns (bool) {
         return super.supportsInterface(interfaceId);
     }
 

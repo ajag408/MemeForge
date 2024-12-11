@@ -1,26 +1,38 @@
 const hre = require("hardhat");
 
 async function main() {
-  // Deploy MemeForge first
-  const MemeForge = await hre.ethers.getContractFactory("MemeForge");
-  const memeForge = await MemeForge.deploy();
-  await memeForge.waitForDeployment();
-  console.log("MemeForge deployed to:", await memeForge.getAddress());
+  const [deployer] = await ethers.getSigners();
+  console.log("Deploying contracts with the account:", deployer.address);
 
-  // Deploy mock NFTs
-  //   const MockNFT = await hre.ethers.getContractFactory("MockNFT");
-  //   const keyNFT = await MockNFT.deploy("KeyNFT", "KEY");
-  //   await keyNFT.waitForDeployment();
-  //   console.log("KeyNFT deployed to:", await keyNFT.getAddress());
+  // Deploy MemeForgeCore first
+  const MemeForgeCore = await ethers.getContractFactory("MemeForgeCore");
+  const memeForgeCore = await MemeForgeCore.deploy();
+  await memeForgeCore.waitForDeployment();
+  const memeForgeCoreAddress = await memeForgeCore.getAddress();
+  console.log("MemeForgeCore deployed to:", memeForgeCoreAddress);
 
-  //   const eyeNFT = await MockNFT.deploy("EyeNFT", "EYE");
-  //   await eyeNFT.waitForDeployment();
-  //   console.log("EyeNFT deployed to:", await eyeNFT.getAddress());
+  // Deploy MemeForgeGasBack with core address
+  const MemeForgeGasBack = await ethers.getContractFactory("MemeForgeGasBack");
+  const memeForgeGasBack = await MemeForgeGasBack.deploy(memeForgeCoreAddress);
+  await memeForgeGasBack.waitForDeployment();
+  console.log(
+    "MemeForgeGasBack deployed to:",
+    await memeForgeGasBack.getAddress()
+  );
 
-  //   // Set NFT addresses in MemeForge
-  //   await memeForge.setKeyNFT(await keyNFT.getAddress());
-  //   await memeForge.setEyeNFT(await eyeNFT.getAddress());
-  //   console.log("NFT addresses set in MemeForge");
+  // Connect MemeForgeCore to GasBack
+  await memeForgeCore.setGasBackContract(await memeForgeGasBack.getAddress());
+  console.log("Contracts linked successfully");
+
+  // Save deployment addresses for next script
+  const deployments = {
+    MemeForgeCore: memeForgeCoreAddress,
+    MemeForgeGasBack: await memeForgeGasBack.getAddress(),
+  };
+
+  // Save to file
+  const fs = require("fs");
+  fs.writeFileSync("deployments.json", JSON.stringify(deployments, null, 2));
 }
 
 main()
