@@ -1,7 +1,7 @@
 "use client";
 
 import { ethers } from 'ethers';
-import MemeForgeContract from '../contracts/MemeForge.json';
+import MemeForgeContract from '../contracts/MemeForgeCore.json';
 import { useState, useEffect } from 'react';
 
 const REQUIRED_CHAIN_ID = 11011;

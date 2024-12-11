@@ -16,7 +16,7 @@ interface CreatorStats {
 export default function Leaderboard() {
   const [creators, setCreators] = useState<CreatorStats[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const { contract } = useContract();
+  const { memeForgeCore: contract } = useContract();
 
   useEffect(() => {
     const fetchCreatorStats = async () => {

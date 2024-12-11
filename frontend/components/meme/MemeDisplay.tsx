@@ -19,7 +19,7 @@ export default function MemeDisplay({ meme, onRemix, showFullSize }: MemeDisplay
   const [isLiking, setIsLiking] = useState(false);
   const { smartAccount } = useSmartAccount();
 
-  const { contract, signer } = useContract();
+  const { memeForgeCore: contract, signer } = useContract();
   const [metadata, setMetadata] = useState<MemeMetadata | null>(null);
   const [imageUrl, setImageUrl] = useState('');
   const { isEyeHolder } = useEyeHolderStatus(meme.creator);

@@ -13,7 +13,7 @@ export default function MemePage() {
   const [metadata, setMetadata] = useState<any>(null);
   const [imageUrl, setImageUrl] = useState('');
   const [isLoading, setIsLoading] = useState(true);
-  const { contract } = useContract();
+  const { memeForgeCore: contract } = useContract();
 
   useEffect(() => {
     const fetchMeme = async () => {

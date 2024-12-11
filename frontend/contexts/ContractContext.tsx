@@ -2,13 +2,16 @@
 
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { ethers } from 'ethers';
-import MemeForgeContract from '../contracts/MemeForge.json';
+import MemeForgeCore from '../contracts/MemeForgeCore.json';
+import MemeForgeGasBack from '../contracts/MemeForgeGasBack.json';
+import { CONTRACT_ADDRESSES } from '../config/contracts';
 import { useSmartAccount } from '@/contexts/SmartAccountContext';
 
 const REQUIRED_CHAIN_ID = 11011;
 
 interface ContractContextType {
-  contract: ethers.Contract | null;
+  memeForgeCore: ethers.Contract | null;
+  memeForgeGasBack: ethers.Contract | null;
   signer: ethers.Signer | null;
   isWrongNetwork: boolean;
   connect: () => Promise<ethers.Signer | null>;
@@ -21,7 +24,8 @@ const ContractContext = createContext<ContractContextType | null>(null);
 
 export function ContractProvider({ children }: { children: ReactNode }) {
   const { smartAccount, smartAccountAddress } = useSmartAccount();
-  const [contract, setContract] = useState<ethers.Contract | null>(null);
+  const [memeForgeCore, setMemeForgeCore] = useState<ethers.Contract | null>(null);
+  const [memeForgeGasBack, setMemeForgeGasBack] = useState<ethers.Contract | null>(null);
   const [signer, setSigner] = useState<ethers.Signer | null>(null);
   const [isWrongNetwork, setIsWrongNetwork] = useState(false);
   const [isConnected, setIsConnected] = useState(false);
@@ -30,21 +34,33 @@ export function ContractProvider({ children }: { children: ReactNode }) {
     if (typeof window === 'undefined' || !window.ethereum) return;
 
     const provider = new ethers.providers.Web3Provider(window.ethereum);
-    const newContract = new ethers.Contract(
-      process.env.NEXT_PUBLIC_MEMEFORGE_ADDRESS!,
-      MemeForgeContract.abi,
+    const core = new ethers.Contract(
+      CONTRACT_ADDRESSES.MemeForgeCore,
+      MemeForgeCore.abi,
       provider
     );
-    setContract(newContract);
+    
+    const gasBack = new ethers.Contract(
+      CONTRACT_ADDRESSES.MemeForgeGasBack,
+      MemeForgeGasBack.abi,
+      provider
+    );
+
+    setMemeForgeCore(core);
+    setMemeForgeGasBack(gasBack);
   }, []);
 
   useEffect(() => {
-    if (contract && (signer || smartAccount?.signer)) {
-        const activeSigner = smartAccount?.signer || signer;
-        if (activeSigner) {
-            const connectedContract = contract.connect(activeSigner);
-            setContract(connectedContract);
+    if ((memeForgeCore || memeForgeGasBack) && (signer || smartAccount?.signer)) {
+      const activeSigner = smartAccount?.signer || signer;
+      if (activeSigner) {
+        if (memeForgeCore) {
+          setMemeForgeCore(memeForgeCore.connect(activeSigner));
         }
+        if (memeForgeGasBack) {
+          setMemeForgeGasBack(memeForgeGasBack.connect(activeSigner));
+        }
+      }
     }
   }, [signer, smartAccount]);
 
@@ -75,19 +91,29 @@ export function ContractProvider({ children }: { children: ReactNode }) {
       const network = await provider.getNetwork();
       if (network.chainId !== REQUIRED_CHAIN_ID) {
         setIsWrongNetwork(true);
+        await switchNetwork();
         return null;
       }
       
       setIsWrongNetwork(false);
-      const newSigner = provider.getSigner();
-      setSigner(newSigner);
+      const signer = provider.getSigner();
+      setSigner(signer);
+      setIsConnected(true);
 
-      if (contract) {
-        const connectedContract = contract.connect(newSigner);
-        setContract(connectedContract);
-      }
+      // Update contracts with signer
+      setMemeForgeCore(new ethers.Contract(
+        CONTRACT_ADDRESSES.MemeForgeCore,
+        MemeForgeCore.abi,
+        signer
+      ));
+      
+      setMemeForgeGasBack(new ethers.Contract(
+        CONTRACT_ADDRESSES.MemeForgeGasBack,
+        MemeForgeGasBack.abi,
+        signer
+      ));
 
-      return newSigner;
+      return signer;
     } catch (error) {
       console.error('Error connecting:', error);
       return null;
@@ -96,20 +122,29 @@ export function ContractProvider({ children }: { children: ReactNode }) {
 
   const disconnect = () => {
     setSigner(null);
+    setIsConnected(false);
+    
+    // Reinitialize with provider only
     if (window.ethereum) {
       const provider = new ethers.providers.Web3Provider(window.ethereum);
-      const newContract = new ethers.Contract(
-        process.env.NEXT_PUBLIC_MEMEFORGE_ADDRESS!,
-        MemeForgeContract.abi,
+      setMemeForgeCore(new ethers.Contract(
+        CONTRACT_ADDRESSES.MemeForgeCore,
+        MemeForgeCore.abi,
         provider
-      );
-      setContract(newContract);
+      ));
+      
+      setMemeForgeGasBack(new ethers.Contract(
+        CONTRACT_ADDRESSES.MemeForgeGasBack,
+        MemeForgeGasBack.abi,
+        provider
+      ));
     }
   };
 
   return (
     <ContractContext.Provider value={{
-      contract,
+      memeForgeCore,
+      memeForgeGasBack,
       signer: smartAccount?.signer || signer,
       isWrongNetwork,
       connect,

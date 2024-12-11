@@ -9,7 +9,7 @@ const EYE_NFT_ADDRESS = process.env.NEXT_PUBLIC_EYE_NFT_ADDRESS;
 const NFT_ABI = ["function balanceOf(address owner) view returns (uint256)"];
 
 export function useNFTGating() {
-  const { contract, signer } = useContract();
+  const { memeForgeCore: contract, signer } = useContract();
   const { smartAccountAddress } = useSmartAccount();
   const [nftStatus, setNftStatus] = useState<NFTGating>({ 
     hasKeyNFT: false, 
@@ -18,6 +18,8 @@ export function useNFTGating() {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    let isMounted = true;
+
     const checkNFTs = async () => {
       if (!contract || (!signer && !smartAccountAddress)){
         setIsLoading(false);
@@ -34,18 +36,26 @@ export function useNFTGating() {
           eyeContract.balanceOf(address)
         ]);
 
-        setNftStatus({
-          hasKeyNFT: keyBalance > 0,
-          hasEyeNFT: eyeBalance > 0
-        });
+        if (isMounted) {
+            setNftStatus({
+              hasKeyNFT: keyBalance > 0,
+              hasEyeNFT: eyeBalance > 0
+            });
+          }
       } catch (error) {
         console.error('Error checking NFT status:', error);
       } finally {
-        setIsLoading(false);
+        if(isMounted){
+            setIsLoading(false);
+        }
       }
     };
 
     checkNFTs();
+
+    return () => {
+      isMounted = false;
+    };
   }, [contract, signer, smartAccountAddress]);
 
   return { ...nftStatus, isLoading, signer };

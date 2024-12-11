@@ -12,7 +12,7 @@ export default function AllMemes() {
   const [eyeHolderStatuses, setEyeHolderStatuses] = useState<Map<string, boolean>>(new Map());
   const [isLoading, setIsLoading] = useState(true);
   const [selectedMeme, setSelectedMeme] = useState<Meme | null>(null);
-  const { contract } = useContract();
+  const { memeForgeCore: contract } = useContract();
 
   useEffect(() => {
     const fetchMemes = async () => {

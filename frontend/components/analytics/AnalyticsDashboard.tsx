@@ -20,7 +20,7 @@ interface EarningsData {
 }
 
 export default function AnalyticsDashboard() {
-  const { contract } = useContract();
+  const { memeForgeCore: contract } = useContract();
   const [trendingTags, setTrendingTags] = useState<TagStats[]>([]);
   const [topEarners, setTopEarners] = useState<EarningsData[]>([]);
   const [isLoading, setIsLoading] = useState(true);

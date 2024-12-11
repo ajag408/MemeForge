@@ -14,7 +14,7 @@ interface ProfileStats {
 }
 
 export default function ProfilePage() {
-  const { contract, signer } = useContract();
+  const { memeForgeCore: contract, signer } = useContract();
   const [mintedMemes, setMintedMemes] = useState<Meme[]>([]);
   const [remixedMemes, setRemixedMemes] = useState<Meme[]>([]);
   const [stats, setStats] = useState<ProfileStats>({

@@ -18,7 +18,7 @@ export default function VotingDashboard() {
   const [userCanVote, setUserCanVote] = useState(false);
   const [votingStats, setVotingStats] = useState<Record<number, VotingStats>>({});
   const [selectedMeme, setSelectedMeme] = useState<Meme | null>(null);
-  const { contract, signer } = useContract();
+  const { memeForgeCore: contract, signer } = useContract();
 
   useEffect(() => {
     const checkVotingEligibility = async () => {

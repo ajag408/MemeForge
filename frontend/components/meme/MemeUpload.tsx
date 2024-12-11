@@ -34,7 +34,7 @@ export default function MemeUpload({ selectedImage }: MemeUploadProps) {
   const [showTemplates, setShowTemplates] = useState(false);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   
-  const { contract, signer } = useContract();
+  const { memeForgeCore: contract, signer } = useContract();
   const { smartAccount } = useSmartAccount();
   useEffect(() => {
     if (selectedImage) {

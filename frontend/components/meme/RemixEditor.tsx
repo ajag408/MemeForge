@@ -14,7 +14,7 @@ interface RemixEditorProps {
 }
 
 export default function RemixEditor({ originalMeme, onClose }: RemixEditorProps) {
-  const { contract, signer } = useContract();
+  const { memeForgeCore: contract, signer } = useContract();
   const { smartAccount } = useSmartAccount();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [title, setTitle] = useState('');
