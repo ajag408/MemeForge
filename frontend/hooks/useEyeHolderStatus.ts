@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { ethers } from 'ethers';
-
+import { isClient } from '@/utils/isClient';
 const EYE_NFT_ADDRESS = process.env.NEXT_PUBLIC_EYE_NFT_ADDRESS;
 const NFT_ABI = ["function balanceOf(address owner) view returns (uint256)"];
 
@@ -16,7 +16,7 @@ export function useEyeHolderStatus(address: string | undefined) {
       }
 
       try {
-        if (!window.ethereum) return;
+        if (!isClient || !window.ethereum) return;
         const provider = new ethers.providers.Web3Provider(window.ethereum);
         const eyeContract = new ethers.Contract(EYE_NFT_ADDRESS!, NFT_ABI, provider);
         const balance = await eyeContract.balanceOf(address);

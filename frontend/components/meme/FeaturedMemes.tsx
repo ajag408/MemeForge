@@ -7,7 +7,7 @@ import MemeDisplay from './MemeDisplay';
 import RemixEditor from './RemixEditor';
 import { useEyeHolderStatus } from '@/hooks/useEyeHolderStatus';
 import { ethers } from 'ethers';
-
+import { isClient } from '@/utils/isClient';
 export default function FeaturedMemes() {
   const [memes, setMemes] = useState<Meme[]>([]);
   const [eyeHolderStatuses, setEyeHolderStatuses] = useState<Map<string, boolean>>(new Map());
@@ -20,7 +20,7 @@ export default function FeaturedMemes() {
     if (!contract) return;
 
     try {
-      if (!window.ethereum) return;
+      if (!isClient || !window.ethereum) return;
       const nextTokenId = await contract.getNextTokenId();
       const memesData = [];
       const statusesMap = new Map<string, boolean>();

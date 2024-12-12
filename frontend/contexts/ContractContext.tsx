@@ -6,6 +6,7 @@ import MemeForgeCore from '../contracts/MemeForgeCore.json';
 import MemeForgeGasBack from '../contracts/MemeForgeGasBack.json';
 import { CONTRACT_ADDRESSES } from '../config/contracts';
 import { useSmartAccount } from '@/contexts/SmartAccountContext';
+import { isClient } from '@/utils/isClient';
 
 const REQUIRED_CHAIN_ID = 11011;
 
@@ -31,7 +32,7 @@ export function ContractProvider({ children }: { children: ReactNode }) {
   const [isConnected, setIsConnected] = useState(false);
 
   useEffect(() => {
-    if (typeof window === 'undefined' || !window.ethereum) return;
+    if (!isClient ||typeof window === 'undefined' || !window.ethereum) return;
 
     const provider = new ethers.providers.Web3Provider(window.ethereum);
     const core = new ethers.Contract(
@@ -70,7 +71,7 @@ export function ContractProvider({ children }: { children: ReactNode }) {
 
   const switchNetwork = async () => {
     try {
-      if (!window.ethereum) return;
+      if (!isClient || !window.ethereum) return;
       
       await window.ethereum.request({
         method: 'wallet_switchEthereumChain',
@@ -83,7 +84,7 @@ export function ContractProvider({ children }: { children: ReactNode }) {
 
   const connect = async () => {
     try {
-      if (typeof window === 'undefined' || !window.ethereum) return null;
+      if (!isClient || !window.ethereum) return null;
 
       const provider = new ethers.providers.Web3Provider(window.ethereum);
       await window.ethereum.request({ method: 'eth_requestAccounts' });
@@ -125,7 +126,7 @@ export function ContractProvider({ children }: { children: ReactNode }) {
     setIsConnected(false);
     
     // Reinitialize with provider only
-    if (window.ethereum) {
+    if (isClient && window.ethereum) {
       const provider = new ethers.providers.Web3Provider(window.ethereum);
       setMemeForgeCore(new ethers.Contract(
         CONTRACT_ADDRESSES.MemeForgeCore,

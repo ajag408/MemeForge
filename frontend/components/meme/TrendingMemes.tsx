@@ -6,7 +6,7 @@ import type { Meme } from '@/types/meme';
 import MemeDisplay from './MemeDisplay';
 import RemixEditor from './RemixEditor';
 import { ethers } from 'ethers';
-
+import { isClient } from '@/utils/isClient';
 export default function TrendingMemes() {
   const [memes, setMemes] = useState<Meme[]>([]);
   const [eyeHolderStatuses, setEyeHolderStatuses] = useState<Map<string, boolean>>(new Map());
@@ -19,7 +19,7 @@ export default function TrendingMemes() {
       if (!contract) return;
 
       try {
-        if (!window.ethereum) return;
+        if (!isClient || !window.ethereum) return;
         const nextTokenId = await contract.getNextTokenId();
         const memesData = [];
         const statusesMap = new Map<string, boolean>();

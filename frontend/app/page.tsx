@@ -3,11 +3,16 @@
 import { useState } from 'react';
 import MemeUpload from '@/components/meme/MemeUpload';
 import VotingDashboard from '@/components/meme/VotingDashboard';
-import FeaturedMemes from '@/components/meme/FeaturedMemes';
+// import FeaturedMemes from '@/components/meme/FeaturedMemes';
 import TrendingMemes from '@/components/meme/TrendingMemes';
 import Leaderboard from '@/components/meme/Leaderboard';
 import AllMemes from '@/components/meme/AllMemes';
+import dynamic from 'next/dynamic'
 
+const FeaturedMemes = dynamic(
+  () => import('@/components/meme/FeaturedMemes'),
+  { ssr: false }
+)
 
 export default function Home() {
   const [activeTab, setActiveTab] = useState('featured');

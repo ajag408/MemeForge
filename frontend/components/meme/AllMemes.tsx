@@ -6,6 +6,7 @@ import type { Meme } from '@/types/meme';
 import MemeDisplay from './MemeDisplay';
 import RemixEditor from './RemixEditor';
 import { ethers } from 'ethers';
+import { isClient } from '@/utils/isClient';
 
 export default function AllMemes() {
   const [memes, setMemes] = useState<Meme[]>([]);
@@ -19,7 +20,7 @@ export default function AllMemes() {
       if (!contract) return;
 
       try {
-        if (!window.ethereum) return;
+        if (!isClient || !window.ethereum) return;
         const nextTokenId = await contract.getNextTokenId();
         const memesData = [];
         const statusesMap = new Map<string, boolean>();

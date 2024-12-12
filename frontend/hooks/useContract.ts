@@ -3,7 +3,7 @@
 import { ethers } from 'ethers';
 import MemeForgeContract from '../contracts/MemeForgeCore.json';
 import { useState, useEffect } from 'react';
-
+import { isClient } from '@/utils/isClient';
 const REQUIRED_CHAIN_ID = 11011;
 
 export function useMemeForgeContract() {
@@ -13,7 +13,7 @@ export function useMemeForgeContract() {
 
   const switchNetwork = async () => {
     try {
-      if (!window.ethereum) return;
+      if (!isClient || !window.ethereum) return;
       
       await window.ethereum.request({
         method: 'wallet_switchEthereumChain',
@@ -25,7 +25,7 @@ export function useMemeForgeContract() {
   };
   // Initialize contract once with window.ethereum provider
   useEffect(() => {
-    if (typeof window === 'undefined' || !window.ethereum) return;
+    if (!isClient || typeof window === 'undefined' || !window.ethereum) return;
 
     const provider = new ethers.providers.Web3Provider(window.ethereum);
     const contract = new ethers.Contract(
@@ -48,7 +48,7 @@ useEffect(() => {
 
   const connect = async () => {
     try {
-      if (typeof window === 'undefined' || !window.ethereum) return null;
+      if (!isClient || typeof window === 'undefined' || !window.ethereum) return null;
 
       const provider = new ethers.providers.Web3Provider(window.ethereum);
       await window.ethereum.request({ method: 'eth_requestAccounts' });
@@ -73,7 +73,7 @@ useEffect(() => {
   const disconnect = () => {
     setSigner(null);
     // Reinitialize with provider
-    if (window.ethereum) {
+    if (isClient && window.ethereum) {
       const provider = new ethers.providers.Web3Provider(window.ethereum);
       const newContract = new ethers.Contract(
         process.env.NEXT_PUBLIC_MEMEFORGE_ADDRESS!,
