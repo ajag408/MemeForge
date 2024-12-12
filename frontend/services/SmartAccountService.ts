@@ -15,9 +15,9 @@ export class SmartAccountService {
 
     async init() {
         try {
-            const shapeSepoliaChain: Chain = {
-                id: 11011,
-                name: 'shapeSepolia',
+            const shapeMainnetChain: Chain = {
+                id: 360,
+                name: 'shapeMainnet',
                 nativeCurrency: {
                     name: 'Sepolia Ether',
                     symbol: 'ETH',
@@ -33,11 +33,11 @@ export class SmartAccountService {
                 },
                 blockExplorers: {
                     default: {
-                        name: 'Sepolia Explorer',
-                        url: 'https://sepolia.etherscan.io'
+                        name: 'Shape Mainnet Explorer',
+                        url: 'https://shapescan.xyz/'
                     }
                 },
-                testnet: true
+                testnet: false
             };
 
             const transport = alchemy({ apiKey: process.env.NEXT_PUBLIC_ALCHEMY_API_KEY!});
@@ -45,11 +45,11 @@ export class SmartAccountService {
             
             this.smartAccountClient = await createAlchemySmartAccountClient({
                 transport,
-                chain: shapeSepoliaChain,
+                chain: shapeMainnetChain,
                 policyId: process.env.NEXT_PUBLIC_POLICY_ID,
                 account: await createLightAccount({
                     signer: LocalAccountSigner.privateKeyToAccountSigner(privateKey),
-                    chain: shapeSepoliaChain,
+                    chain: shapeMainnetChain,
                     transport,
                 }),
             });

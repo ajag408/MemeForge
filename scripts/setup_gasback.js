@@ -12,12 +12,12 @@ async function main() {
 
   // Set GasBack contract address
   await memeForgeGasBack.setGasBackContract(
-    "0xdF329d59bC797907703F7c198dDA2d770fC45034"
+    "0xf5e602c87d675E978F097503aedE4A766285a08B"
   );
   console.log("GasBack contract set");
 
   // Set GasBack token ID
-  await memeForgeGasBack.setGasBackTokenId(22);
+  await memeForgeGasBack.setGasBackTokenId(150);
   console.log("GasBack token ID set");
 }
 

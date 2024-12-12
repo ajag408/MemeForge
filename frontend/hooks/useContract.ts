@@ -4,7 +4,7 @@ import { ethers } from 'ethers';
 import MemeForgeContract from '../contracts/MemeForgeCore.json';
 import { useState, useEffect } from 'react';
 import { isClient } from '@/utils/isClient';
-const REQUIRED_CHAIN_ID = 11011;
+const REQUIRED_CHAIN_ID = 360;
 
 export function useMemeForgeContract() {
   const [contract, setContract] = useState<ethers.Contract | null>(null);

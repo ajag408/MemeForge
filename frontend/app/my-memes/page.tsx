@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useContract } from '@/contexts/ContractContext';
 import type { Meme } from '@/types/meme';
 import MemeDisplay from '@/components/meme/MemeDisplay';
-
+import { ethers } from 'ethers';
 interface ProfileStats {
   totalLikes: number;
   totalRemixes: number;
@@ -29,7 +29,7 @@ export default function ProfilePage() {
 
   useEffect(() => {
     const loadUserMemes = async () => {
-      if (!contract || !signer) return;
+      if (!contract || !signer || !gasBackContract) return;
 
       try {
         const address = await signer.getAddress();
@@ -64,13 +64,16 @@ export default function ProfilePage() {
         setMintedMemes(minted);
         setRemixedMemes(remixed);
         
+        // Get GasBack balance
+        const gasBackBalance = await gasBackContract.creatorRewards(address);
+        console.log("gasBackBalance: ", Number(ethers.utils.formatEther(gasBackBalance)));
         // Calculate total stats
         const totalStats = {
           totalLikes: [...minted, ...remixed].reduce((sum, meme) => sum + meme.likes, 0),
           totalRemixes: [...minted, ...remixed].reduce((sum, meme) => sum + meme.remixes, 0),
           totalVotes: [...minted, ...remixed].reduce((sum, meme) => sum + meme.votes, 0),
           royaltiesEarned: 0, // To be implemented with contract
-          gasBackEarned: 0 // To be implemented with contract
+          gasBackEarned: Number(ethers.utils.formatEther(gasBackBalance))
         };
         
         setStats(totalStats);
@@ -82,7 +85,7 @@ export default function ProfilePage() {
     };
 
     loadUserMemes();
-  }, [contract, signer]);
+  }, [contract, signer, gasBackContract]);
 
   if (isLoading) {
     return <div className="text-center py-8">Loading profile...</div>;

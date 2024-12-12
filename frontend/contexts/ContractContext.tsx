@@ -8,7 +8,7 @@ import { CONTRACT_ADDRESSES } from '../config/contracts';
 import { useSmartAccount } from '@/contexts/SmartAccountContext';
 import { isClient } from '@/utils/isClient';
 
-const REQUIRED_CHAIN_ID = 11011;
+const REQUIRED_CHAIN_ID = 360;
 
 interface ContractContextType {
   memeForgeCore: ethers.Contract | null;
