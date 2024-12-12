@@ -22,7 +22,19 @@ module.exports = {
       gas: 2100000,
     },
   },
-  //   etherscan: {
-  //     apiKey: process.env.ETHERSCAN_API_KEY,
-  //   },
+  etherscan: {
+    apiKey: {
+      shape: "empty",
+    },
+    customChains: [
+      {
+        network: "shape",
+        chainId: 360,
+        urls: {
+          apiURL: "https://shapescan.xyz/api",
+          browserURL: "https://shapescan.xyz",
+        },
+      },
+    ],
+  },
 };

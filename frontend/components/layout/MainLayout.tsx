@@ -16,7 +16,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center">
-              <Link href="/"  className="text-2xl font-bold bg-gradient-to-br from-purple-900 via-pink-800 to-blue-900 bg-clip-text text-transparent">
+              <Link href="/"  className="text-2xl font-bold bg-gradient-to-br from-purple-600 via-pink-500 to-blue-600 bg-clip-text text-transparent">
                 MemeForge
               </Link>
               
