@@ -5,7 +5,6 @@ import { useParams } from 'next/navigation';
 import { useContract } from '@/contexts/ContractContext';
 import type { Meme } from '@/types/meme';
 import Image from 'next/image';
-import Link from 'next/link';
 
 export default function MemePage() {
   const params = useParams();

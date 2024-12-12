@@ -25,7 +25,6 @@ export default function ProfilePage() {
     gasBackEarned: 0
   });
   const [isLoading, setIsLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('minted');
   const [isClaimingGasBack, setIsClaimingGasBack] = useState(false);
 
   useEffect(() => {
