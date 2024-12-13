@@ -8,7 +8,8 @@ import { useSmartAccount } from '@/contexts/SmartAccountContext';
 
 const MEME_TEMPLATES = [
   { name: "Disaster Girl", url: "/templates/disaster-girl.jpg" },
-  { name: "HODL", url: "/templates/hodl.png" },
+  { name: "Frustrated", url: "/templates/macron.png" },
+  { name: "Mary Jane", url: "/templates/MaryJane.png" },
   // Add more templates as needed
 ];
 
