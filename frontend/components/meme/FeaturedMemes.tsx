@@ -120,7 +120,7 @@ export default function FeaturedMemes() {
 
   return (
     <div className="space-y-8">
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
         {memes.map((meme) => (
           <MemeDisplay key={meme.tokenId} meme={meme} onRemix={handleRemix} />
         ))}

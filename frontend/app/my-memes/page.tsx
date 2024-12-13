@@ -4,7 +4,9 @@ import { useState, useEffect } from 'react';
 import { useContract } from '@/contexts/ContractContext';
 import type { Meme } from '@/types/meme';
 import MemeDisplay from '@/components/meme/MemeDisplay';
+import RemixEditor from '@/components/meme/RemixEditor';
 import { ethers } from 'ethers';
+
 interface ProfileStats {
   totalLikes: number;
   totalRemixes: number;
@@ -17,6 +19,7 @@ export default function ProfilePage() {
   const { memeForgeCore: contract, memeForgeGasBack: gasBackContract, signer } = useContract();
   const [mintedMemes, setMintedMemes] = useState<Meme[]>([]);
   const [remixedMemes, setRemixedMemes] = useState<Meme[]>([]);
+  const [selectedMeme, setSelectedMeme] = useState<Meme | null>(null);
   const [stats, setStats] = useState<ProfileStats>({
     totalLikes: 0,
     totalRemixes: 0,
@@ -37,7 +40,6 @@ export default function ProfilePage() {
         const minted = [];
         const remixed = [];
 
-        // Fetch all memes and filter by creator/remixer
         for (let i = 0; i < nextTokenId; i++) {
           const meme = await contract.getMemeData(i);
           const memeData = {
@@ -64,15 +66,12 @@ export default function ProfilePage() {
         setMintedMemes(minted);
         setRemixedMemes(remixed);
         
-        // Get GasBack balance
         const gasBackBalance = await gasBackContract.creatorRewards(address);
-        console.log("gasBackBalance: ", Number(ethers.utils.formatEther(gasBackBalance)));
-        // Calculate total stats
         const totalStats = {
           totalLikes: [...minted, ...remixed].reduce((sum, meme) => sum + meme.likes, 0),
           totalRemixes: [...minted, ...remixed].reduce((sum, meme) => sum + meme.remixes, 0),
           totalVotes: [...minted, ...remixed].reduce((sum, meme) => sum + meme.votes, 0),
-          royaltiesEarned: 0, // To be implemented with contract
+          royaltiesEarned: 0,
           gasBackEarned: Number(ethers.utils.formatEther(gasBackBalance))
         };
         
@@ -87,9 +86,9 @@ export default function ProfilePage() {
     loadUserMemes();
   }, [contract, signer, gasBackContract]);
 
-  if (isLoading) {
-    return <div className="text-center py-8">Loading profile...</div>;
-  }
+  const handleRemix = (meme: Meme) => {
+    setSelectedMeme(meme);
+  };
 
   const handleClaimGasBack = async () => {
     if (!gasBackContract || !signer) {
@@ -109,6 +108,10 @@ export default function ProfilePage() {
       setIsClaimingGasBack(false);
     }
   };
+
+  if (isLoading) {
+    return <div className="text-center py-8">Loading profile...</div>;
+  }
 
   return (
     <div className="space-y-8">
@@ -153,7 +156,7 @@ export default function ProfilePage() {
         <h2 className="text-2xl font-bold text-white mb-4">Your Original Memes</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {mintedMemes.map((meme) => (
-            <MemeDisplay key={meme.tokenId} meme={meme} />
+            <MemeDisplay key={meme.tokenId} meme={meme} onRemix={handleRemix} />
           ))}
         </div>
       </div>
@@ -163,10 +166,18 @@ export default function ProfilePage() {
         <h2 className="text-2xl font-bold text-white mb-4">Your Remixed Memes</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {remixedMemes.map((meme) => (
-            <MemeDisplay key={meme.tokenId} meme={meme} />
+            <MemeDisplay key={meme.tokenId} meme={meme} onRemix={handleRemix} />
           ))}
         </div>
       </div>
+
+      {/* Remix Editor Modal */}
+      {selectedMeme && (
+        <RemixEditor 
+          originalMeme={selectedMeme} 
+          onClose={() => setSelectedMeme(null)} 
+        />
+      )}
     </div>
   );
 }
