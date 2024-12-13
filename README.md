@@ -4,17 +4,33 @@
 
 MemeForge is a revolutionary Web3 platform that transforms meme creation and sharing into a decentralized, incentivized ecosystem. Built on Shape Network, it introduces novel concepts like GasBack rewards and NFT-gated features to create a sustainable meme economy.
 
-![MemeForge Logo](public/logo.png)
+![MemeForge Logo](frontend/public/logo.png)
 
 ## 🔗 Links
 
-- [Demo](https://memeforge.vercel.app)
+- [Demo](https://memeforge-shape.vercel.app)
+
+## 🎯 Problem Statement
+
+The meme ecosystem faces three critical challenges:
+
+1. **Creator Attribution**: Original meme creators rarely receive credit or compensation when their work goes viral
+2. **Gas Fee Barriers**: High transaction costs discourage participation in Web3 meme NFT creation
+3. **Quality Control**: Lack of incentives for high-quality content and meaningful engagement
+
+## 💡 Our Solution
+
+MemeForge introduces a revolutionary platform that transforms meme creation into NFTs, building a sustainable creative economy through:
+
+- **Verifiable Attribution**: Every meme NFT's history is tracked on-chain
+- **GasBack Rewards**: Innovative system that reimburses gas fees for popular content
+- **NFT-Gated Features**: Exclusive features ensure committed community participation
 
 ## 🎯 Quick Start for Judges
 
 ### Live Demo
 
-1. Visit [https://memeforge.vercel.app](https://memeforge.vercel.app)
+1. Visit [https://memeforge-shape.vercel.app](https://memeforge-shape.vercel.app)
 2. Connect your Shape Network wallet
 3. Create and interact with meme NFTs
 
@@ -44,22 +60,6 @@ npm run dev
 2. **Social Interaction**: Like and vote on memes; remix memes
 3. **NFT Gating**: Experience premium features with Key & Eye NFTs
 
-## 🎯 Problem Statement
-
-The meme ecosystem faces three critical challenges:
-
-1. **Creator Attribution**: Original meme creators rarely receive credit or compensation when their work goes viral
-2. **Gas Fee Barriers**: High transaction costs discourage participation in Web3 meme NFT creation
-3. **Quality Control**: Lack of incentives for high-quality content and meaningful engagement
-
-## 💡 Our Solution
-
-MemeForge introduces a revolutionary platform that transforms meme creation into NFTs, building a sustainable creative economy through:
-
-- **Verifiable Attribution**: Every meme NFT's history is tracked on-chain
-- **GasBack Rewards**: Innovative system that reimburses gas fees for popular content
-- **NFT-Gated Features**: Exclusive features ensure committed community participation
-
 ## 🌟 Key Features
 
 ### Core Functionality
@@ -74,7 +74,6 @@ MemeForge introduces a revolutionary platform that transforms meme creation into
 
 - **MemeForgeCore**: Main contract handling meme creation and social interactions
 - **MemeForgeGasBack**: Revolutionary gas reimbursement system
-- **NFT Access Control**: Dual-token gating system (Key & Eye NFTs)
 
 ### 🌊 Viral Mechanics & On-Chain Engagement
 
@@ -90,7 +89,7 @@ MemeForge introduces a revolutionary platform that transforms meme creation into
 - **Engagement Mining**: Likes, votes, and remixes contribute to GasBack earnings
 - **Sustainable Loop**: More engagement → More GasBack → More meme NFT creation
 
-### 3. Dual NFT System
+### 3. Key & Eye Integration
 
 - **Key NFT**: Unlocks AI-powered meme generation capabilities
 - **Eye NFT**: Premium visibility and dynamic badge display
@@ -104,8 +103,7 @@ MemeForge introduces a revolutionary platform that transforms meme creation into
   - Contributes to creator's GasBack rewards
   - Affects trending algorithm ranking
 
-- **Vote Power**: Voting mechanism that:
-  - Requires Eye NFT for curation
+- **Vote Power**: On-chain, NFT-gated voting mechanism that:
   - Amplifies content visibility
   - Generates GasBack rewards for quality content
 
@@ -125,9 +123,7 @@ MemeForge introduces a revolutionary platform that transforms meme creation into
 
 ### 6. Viral Amplification Loop
 
-```
 Create Meme NFT → Receive Engagement → Earn GasBack → Create More Meme NFTs → Repeat
-```
 
 - Each interaction generates on-chain events
 - Events trigger GasBack accumulation
