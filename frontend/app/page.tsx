@@ -53,7 +53,7 @@ export default function Home() {
         <button
           onClick={() => setActiveTab('all')}
           className={`px-6 py-3 rounded-xl font-bold transition-all duration-300 flex items-center gap-2 ${
-            activeTab === 'leaderboard' 
+            activeTab === 'all' 
               ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white scale-105 shadow-lg' 
               : 'bg-gray-800/50 text-gray-300 hover:bg-gray-700/50'
           }`}

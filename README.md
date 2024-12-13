@@ -10,6 +10,8 @@ MemeForge is a revolutionary Web3 platform that transforms meme creation and sha
 
 - [Demo](https://memeforge-shape.vercel.app)
 
+> ⚠️ **Note**: MemeForge is optimized for desktop viewing. For the best experience, please access the platform on a desktop or laptop computer.
+
 ## 🎯 Problem Statement
 
 The meme ecosystem faces three critical challenges:
@@ -30,9 +32,12 @@ MemeForge introduces a revolutionary platform that transforms meme creation into
 
 ### Live Demo
 
-1. Visit [https://memeforge-shape.vercel.app](https://memeforge-shape.vercel.app)
+1. Visit [https://memeforge-shape.vercel.app](https://memeforge-shape.vercel.app) on a desktop browser
 2. Connect your Shape Network wallet
 3. Create and interact with meme NFTs
+4. Experience GasBack rewards system
+
+> 💻 **Desktop Required**: The meme creation and editing features are currently optimized for desktop use. Mobile support is planned for future releases.
 
 ### Local Development
 
