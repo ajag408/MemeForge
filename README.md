@@ -8,7 +8,7 @@ MemeForge is a revolutionary Web3 platform that transforms meme creation and sha
 
 ## 🔗 Links
 
-- [Demo](https://memeforge-shape.vercel.app)
+- [Live Site](https://memeforge-shape.vercel.app)
 
 > ⚠️ **Note**: MemeForge is optimized for desktop viewing. For the best experience, please access the platform on a desktop or laptop computer.
 
@@ -78,7 +78,14 @@ npm run dev
 ### Smart Contract Architecture
 
 - **MemeForgeCore**: Main contract handling meme creation and social interactions
+
+  - address: 0x09C111238F70a72F7768411372E3254b0aEdf8Ff
+  - explorer: https://shapescan.xyz/address/0x09C111238F70a72F7768411372E3254b0aEdf8Ff
+  - highlight collection: https://highlight.xyz/mint/shape:0x09C111238F70a72F7768411372E3254b0aEdf8Ff:e407d8690f0d663551fbdcce18d0cd35
+
 - **MemeForgeGasBack**: Revolutionary gas reimbursement system
+  - address: 0xeeb19F7efd2647eda5eE3EBdBe924f33168fB868
+  - explorer: https://shapescan.xyz/address/0xeeb19F7efd2647eda5eE3EBdBe924f33168fB868
 
 ### 🌊 Viral Mechanics & On-Chain Engagement
 

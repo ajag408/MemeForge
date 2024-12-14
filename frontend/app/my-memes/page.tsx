@@ -117,7 +117,7 @@ export default function ProfilePage() {
     <div className="space-y-8">
       {/* Profile Stats & Rewards Section */}
       <div className="bg-gradient-to-br from-gray-900 to-gray-800 p-6 rounded-xl">
-        <h2 className="text-2xl font-bold text-white mb-4">Your Rewards</h2>
+        <h2 className="text-2xl font-bold text-white mb-4">Your Activity & Rewards</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
           {/* Stats Card */}
           <div className="bg-purple-500/20 text-purple-300 p-4 rounded-lg">
